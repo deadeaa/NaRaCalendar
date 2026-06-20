@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Landing Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg-main: #002020;
+            --bg-card: #003030;
+            --bg-soft: #004030;
+
+            --primary-green: #10B080;
+            --accent-cyan: #10D0E0;
+
+            --info-dark: #103040;
+            --info-soft: #105040;
+
+            --text-white: #F0F0F0;
+            --text-gray: #E0E0E0;
+            --text-soft: #D0E0E0;
+
+            --border-soft: #103030;
+            --border-muted: #102030;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body { background: linear-gradient(180deg, var(--bg-soft) 0%, rgba(4,34,28,0.9) 100%); color: var(--text-white); }
+        a { color: inherit; text-decoration: none; }
+
+        /* Decorative elements */
+        .blob { position: absolute; border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; opacity: 0.08; }
+        .blob-1 { width: 400px; height: 400px; background: var(--primary-green); top: -100px; right: -50px; animation: float 8s ease-in-out infinite; }
+        .blob-2 { width: 300px; height: 300px; background: var(--accent-cyan); bottom: 50px; left: -100px; animation: float 10s ease-in-out infinite 2s; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(30px); } }
+
+        .glow-line { position: relative; display: inline-block; }
+        .glow-line::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background: var(--primary-green); filter: blur(4px); opacity: 0.5; }
+
+        /* Header / nav */
+        header { position: relative; border-bottom: 1px solid var(--border-soft); }
+        header nav a.brand { color: var(--text-white); font-weight: 700; letter-spacing: .2px; }
+        header nav a.navlink { color: var(--text-gray); position: relative; }
+        header nav a.navlink::after { content: ''; position: absolute; bottom: -5px; left: 0; width: 0; height: 2px; background: var(--primary-green); transition: width .3s ease; }
+        header nav a.navlink:hover::after { width: 100%; }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(180deg, var(--primary-green), color-mix(in srgb, var(--primary-green) 85%, black 15%));
+            color: var(--text-white);
+            padding: .5rem 1.25rem;
+            border-radius: 9999px;
+            border: none;
+            box-shadow: 0 6px 18px rgba(16,176,128,0.12);
+            transition: transform .16s ease, filter .12s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: rgba(255,255,255,0.1); transition: left .3s ease; }
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover { transform: translateY(-3px); filter: brightness(.98); }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-white);
+            padding: .45rem 1rem;
+            border-radius: 9999px;
+            border: 1px solid var(--border-muted);
+            transition: background .12s, color .12s, transform .12s;
+            position: relative;
+        }
+        .btn-outline:hover { background: rgba(16,176,128,0.1); transform: translateY(-2px); border-color: var(--primary-green); }
+
+        /* Cards */
+        .card {
+            background: linear-gradient(180deg, var(--bg-card), color-mix(in srgb, var(--bg-card) 85%, black 10%));
+            border: 1px solid var(--border-soft);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            box-shadow: 0 10px 30px rgba(2,8,8,0.45);
+            transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--primary-green), transparent); opacity: 0; transition: opacity .3s ease; }
+        .card:hover { transform: translateY(-6px); box-shadow: 0 18px 48px rgba(2,8,8,0.6), 0 0 20px rgba(16,176,128,0.1); border-color: var(--primary-green); }
+        .card:hover::before { opacity: 1; }
+
+        /* Accent elements */
+        .accent-pill { background: var(--primary-green); color: var(--text-white); border-radius: 999px; padding: .35rem .9rem; font-weight: 600; transition: transform .2s ease, box-shadow .2s ease; display: inline-block; box-shadow: 0 4px 12px rgba(16,176,128,0.2); }
+        .accent-pill:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(16,176,128,0.35); }
+        .accent-line { display: inline-block; width: 64px; height: 6px; background: linear-gradient(90deg, var(--accent-cyan), var(--primary-green)); border-radius: 6px; box-shadow: 0 0 12px rgba(16,208,224,0.3); }
+
+        /* Avatar variants */
+        .avatar-primary { background: linear-gradient(135deg, var(--primary-green), color-mix(in srgb, var(--primary-green) 80%, var(--accent-cyan) 20%)); color: var(--text-white); box-shadow: 0 0 20px rgba(16,176,128,0.3); }
+        .avatar-accent { background: linear-gradient(135deg, var(--accent-cyan), color-mix(in srgb, var(--accent-cyan) 80%, var(--primary-green) 20%)); color: var(--bg-main); box-shadow: 0 0 20px rgba(16,208,224,0.3); }
+
+        /* section backgrounds */
+        .section-main { background: var(--bg-main); position: relative; overflow: hidden; }
+        .section-contrast { background: linear-gradient(180deg, rgba(0,32,32,0.98) 0%, rgba(0,48,48,0.98) 100%); position: relative; overflow: hidden; }
+
+        /* Typography tweaks */
+        .hero-title { color: var(--text-white); letter-spacing: -1px; background: linear-gradient(135deg, var(--text-white), var(--text-soft)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .muted { color: var(--text-soft); }
+        .subtle { color: var(--text-gray); }
+
+        /* Responsive tweak for big brand title */
+        .brand-big { font-size: clamp(8rem, 18vw, 14rem); line-height: .9; font-weight: 800; color: rgba(240,240,240,.9); }
+        .brand-big-glow { background: linear-gradient(135deg, var(--text-white), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 30px rgba(16,208,224,0.2); filter: drop-shadow(0 0 15px rgba(16,208,224,0.15)); }
+
+        /* Divider */
+        .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-soft), transparent); margin: 2rem 0; }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+    <!-- Background Blobs -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <header class="px-8 py-6 relative z-10">
+        <nav class="flex items-center justify-between max-w-6xl mx-auto">
+            <div class="flex items-center gap-10">
+                <div class="hidden md:flex items-center gap-8"></div>
+                <!-- About and Mi Equipo removed -->
+            </div>
+
+            <div class="flex items-center gap-4"></div>
+                <a href="{{ url_for('login') }}">
+                    <button class="btn-outline">Log-in</button>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- HERO -->
+    <section class="relative p-6 max-w-6xl mx-auto z-10">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div>
+                <h1 class="hero-title text-5xl md:text-6xl lg:text-7xl font-extralight max-w-3xl">
+                    Anytime you want. <br/> Everywhere you want.
+                    <br/> Manage your day with ease.
+                </h1>
+
+                <p class="mt-6 max-w-lg subtle">
+                    Personalize your home assistant. The trusted daily secretary — Private, Fast, and Designed for your life.
+                </p>
+
+                <div class="mt-8 flex items-center gap-4">
+                    <a href="{{ url_for('signup') }}">
+                        <button class="btn-primary">Get Started</button>
+                    </a>
+                </div>
+            </div>
+
+            <div class="relative flex justify-end items-start">
+                <div class="brand-big brand-big-glow">na.ra</div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

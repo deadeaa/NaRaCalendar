@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nara Voice Assistant - Calendar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#10b981',
+            secondary: '#64748b',
+            accent: '#059669',
+            error: '#ef4444',
+            neutral: '#f8fafc',
+            dark: '#1e293b',
+            light: '#f1f5f9',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Arial', 'Helvetica', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-in',
+            'slide-in': 'slideIn 0.3s ease-out',
+            'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+            'pulse': 'pulse 1.5s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideIn: {
+              '0%': { transform: 'translateX(-20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            pulseSoft: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.7' },
+            },
+            pulse: {
+              '0%, 100%': { transform: 'scale(1)', opacity: '1' },
+              '50%': { transform: 'scale(1.05)', opacity: '0.7' },
+            },
+          },
+          boxShadow: {
+            'soft': '0 2px 15px rgba(0, 0, 0, 0.08)',
+            'medium': '0 4px 25px rgba(0, 0, 0, 0.12)',
+            'strong': '0 8px 40px rgba(0, 0, 0, 0.15)',
+            'glow': '0 0 30px rgba(59, 130, 246, 0.3)',
+            'mic-glow': '0 0 50px rgba(99, 102, 241, 0.5)',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    .card-box {
+      transition: all 0.3s ease;
+    }
+    .card-box:hover {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    .btn {
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    /* Voice animation */
+    @keyframes voicePulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes voiceRipple {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+    
+    .voice-pulse {
+      animation: voicePulse 1.5s ease-in-out infinite;
+    }
+    
+    .voice-ripple {
+      position: absolute;
+      border: 3px solid #3b82f6;
+      border-radius: 50%;
+      animation: voiceRipple 1.5s linear infinite;
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Status dots */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    
+    .status-ready { background-color: #10b981; }
+    .status-listening { 
+      background-color: #3b82f6; 
+      animation: pulse 1.5s infinite;
+    }
+    .status-processing { 
+      background-color: #f59e0b; 
+      animation: pulse 0.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    /* Event tags */
+    .event-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-right: 4px;
+    }
+    
+    .tag-study { background: #dbeafe; color: #1e40af; }
+    .tag-meeting { background: #f3e8ff; color: #7c3aed; }
+    .tag-work { background: #fef3c7; color: #92400e; }
+    .tag-personal { background: #dcfce7; color: #166534; }
+    .tag-other { background: #f1f5f9; color: #475569; }
+    
+    /* Glass effect */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .mic-active {
+        animation: pulse 1.5s infinite;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3),
+                    0 0 0 8px rgba(99, 102, 241, 0.2),
+                    0 0 20px rgba(99, 102, 241, 0.5);
+    }
+
+    @keyframes pulse-ring {
+        0% { transform: scale(0.8); opacity: 0.5; }
+        80%, 100% { transform: scale(1.4); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 min-h-screen font-sans text-slate-900 antialiased p-4 md:p-6">
+  
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md rounded-2xl shadow-soft border border-slate-200/50 p-4 mb-6 flex justify-between items-center">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+        N
+      </div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-slate-900">Nara Voice Assistant</h1>
+        <p class="text-sm text-secondary">Fast & Accurate Calendar Assistant</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-4">
+      <small id="clock" class="text-secondary text-sm font-medium"></small>
+      <div class="relative group">
+        <div class="user w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center cursor-pointer hover:bg-indigo-500 hover:text-white transition-all duration-300 text-lg">
+          🎤
+        </div>
+        <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-strong border border-slate-200/50 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+          <a href="/calendar" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-calendar mr-2"></i>Calendar
+          </a>
+          <a href="/dashboard" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-home mr-2"></i>Dashboard
+          </a>
+          <a href="/health" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-heartbeat mr-2"></i>Health Insights
+          </a>
+          <div class="border-t border-slate-100 my-1"></div>
+          <a href="/logout" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area with Sidebar -->
+  <div class="main-content bg-white/95 backdrop-blur-xl rounded-3xl shadow-medium border border-slate-200/50 overflow-hidden flex min-h-[700px]">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar w-20 md:w-24 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center py-6 px-2 text-slate-200 shadow-inner">
+      <div class="brand font-bold text-xs tracking-wider text-slate-100 mb-6 uppercase">Menu</div>
+      <nav class="flex flex-col space-y-2 flex-1">
+        <a href="/dashboard" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Dashboard">
+          <span class="relative z-10">🏠</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <!-- <a href="/chat" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="AI Chat">
+          <span class="relative z-10">💬</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a> -->
+        <a href="/speak" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white text-lg transition-all duration-300 bg-primary/20 border border-primary/30 hover:bg-primary/30 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Voice Assistant">
+          <span class="relative z-10">🎙️</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/calendar" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Calendar">
+          <span class="relative z-10">📅</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/health" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Health Tracker">
+          <span class="relative z-10">❤️</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/emotion" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Face Emotion Scan">
+          <span class="relative z-10">😊</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+      </nav>
+      <div class="mt-auto">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm text-slate-300 mb-2 text-center leading-tight">
+          <span id="today-date-short">Today</span>
+        </div>
+        <a href="/profile" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Profile">
+          <span class="relative z-10">👤</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 md:p-8 overflow-auto scrollbar-thin">
+      
+      <!-- Header Section -->
+      <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Voice Command Center</h2>
+            <p class="text-secondary">Speak naturally to add events to your calendar</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div id="db-status" class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-lg flex items-center gap-2">
+              <span class="status-dot status-ready"></span>
+              <span>Ready to take commands</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice Assistant Interface -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Voice Controls Card -->
+        <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 fade-in-up">
+          <h3 class="text-lg font-semibold text-slate-900 flex items-center mb-6">
+            <span class="w-8 h-8 bg-gradient-to-r from-indigo-500/10 to-purple-600/10 rounded-lg flex items-center justify-center mr-3">
+              <span class="text-indigo-500 text-sm">🎤</span>
+            </span>
+            Voice Controls
+          </h3>
+          
+          <!-- Microphone Button -->
+          <div class="text-center mb-6">
+            <div class="relative inline-block">
+              <button id="mic-button" 
+                      class="group relative w-28 h-28 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg hover:shadow-mic-glow hover:shadow-indigo-500/30 transition-all duration-300 transform hover:scale-105 active:scale-95">
+                <i id="mic-icon" class="fas fa-microphone text-4xl text-white group-hover:scale-110 transition-transform duration-300"></i>
+                <div id="voice-ripple-1" class="absolute inset-0 rounded-full border-4 border-indigo-400/30 animate-pulse hidden"></div>
+                <div id="voice-ripple-2" class="absolute inset-0 rounded-full border-4 border-purple-400/20 animate-pulse delay-150 hidden"></div>
+              </button>
+              <div class="absolute -inset-4 bg-gradient-to-r from-indigo-400/10 to-purple-400/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            </div>
+            
+            <!-- Status Indicator -->
+            <div id="status-indicator" class="inline-flex items-center gap-3 px-4 py-2 bg-green-50 rounded-full mt-6 mb-4 border border-green-200">
+              <span id="status-text" class="text-sm font-medium text-green-700">
+                <span class="status-dot status-ready"></span>
+                Ready to listen
+              </span>
+            </div>
+            
+            <div class="text-secondary text-sm mb-4 flex items-center justify-center gap-2">
+              <i class="fas fa-keyboard text-slate-400"></i>
+              Press <kbd class="px-2 py-1 bg-slate-100 rounded text-sm font-mono">Space</kbd> or click microphone
+            </div>
+          </div>
+          
+          <!-- Transcript Section -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Live Transcript</label>
+              <div id="transcript" class="min-h-24 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <div class="text-slate-400 italic text-sm">Speak to see your command here...</div>
+              </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-2">
+              <button id="clear-btn" 
+                      class="btn secondary bg-white text-primary border border-slate-200 px-4 py-2 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm flex items-center gap-2">
+                <i class="fas fa-eraser text-xs"></i>
+                Clear
+              </button>
+              
+              <button id="test-add" 
+                      class="btn bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-medium text-sm flex items-center gap-2">
+                <i class="fas fa-plus text-xs"></i>
+                Test Add Event
+              </button>
+              
+              <button id="quick-add" 
+                      class="btn bg-gradient-to-r from-blue-500 to-cyan-600 text-white px-4 py-2 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-medium text-sm flex items-center gap-2">
+                <i class="fas fa-calendar-plus text-xs"></i>
+                Quick Add
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nara's Responses Card -->
+        <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 fade-in-up lg:col-span-2" style="animation-delay: 0.1s">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-slate-900 flex items-center gap-2">
+              <i class="fas fa-robot text-indigo-500"></i>
+              Nara's Responses
+            </h3>
+            <div class="text-xs text-secondary flex items-center gap-1">
+              <i class="fas fa-bolt text-yellow-500"></i>
+              Fast Processing
+            </div>
+          </div>
+          
+          <!-- Response Area -->
+          <div id="response" class="min-h-64 p-4 bg-slate-50 rounded-xl border border-slate-200 mb-4 overflow-y-auto scrollbar-thin">
+            <div class="text-indigo-800">
+              <div class="font-semibold mb-2">🎯 Welcome to Nara!</div>
+              <p class="mb-2 text-sm text-slate-700">I'm your instant calendar assistant. I understand natural language and add events immediately.</p>
+              <p class="text-sm text-slate-600">Try saying: <em>"Add lunch meeting tomorrow at 1 PM"</em></p>
+            </div>
+          </div>
+          
+          <!-- Quick Commands -->
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <h4 class="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <i class="fas fa-bolt text-green-500"></i>
+              Quick Commands that Work Instantly
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <div class="text-slate-700 flex items-center">
+                <span class="event-tag tag-study mr-2">Study</span>
+                "Study math at 4 PM"
+              </div>
+              <div class="text-slate-700 flex items-center">
+                <span class="event-tag tag-meeting mr-2">Meeting</span>
+                "Team meeting tomorrow 10 AM"
+              </div>
+              <div class="text-slate-700 flex items-center">
+                <span class="event-tag tag-personal mr-2">Personal</span>
+                "Lunch with Sarah at 1 PM"
+              </div>
+              <div class="text-slate-700 flex items-center">
+                <span class="event-tag tag-work mr-2">Work</span>
+                "Work on project at 3 PM"
+              </div>
+              <div class="text-slate-700 flex items-center">
+                <span class="event-tag tag-other mr-2">Game</span>
+                "Gaming session at 8 PM"
+              </div>
+              <div class="text-slate-700 flex items-center">
+                <span class="event-tag tag-other mr-2">Other</span>
+                "Dentist appointment Friday"
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats & Events -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Stats Card -->
+        <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 fade-in-up" style="animation-delay: 0.2s">
+          <h3 class="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+            <span class="w-8 h-8 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg flex items-center justify-center mr-3">
+              <span class="text-primary text-sm">📊</span>
+            </span>
+            Quick Stats
+          </h3>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-secondary">Today's Events</div>
+              <div id="speak-today-count" class="text-lg font-bold text-blue-600">0</div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-secondary">Commands Today</div>
+              <div id="command-count" class="text-lg font-bold text-green-600">0</div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-secondary">Success Rate</div>
+              <div id="success-rate" class="text-lg font-bold text-purple-600">100%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Events Card -->
+        <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 fade-in-up lg:col-span-2" style="animation-delay: 0.3s">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-slate-900 flex items-center">
+              <span class="w-8 h-8 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg flex items-center justify-center mr-3">
+                <span class="text-purple-500 text-sm">📅</span>
+              </span>
+              Recent Events Added
+            </h3>
+            <button id="refresh-events" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors">
+              <i class="fas fa-sync-alt text-slate-600 text-sm"></i>
+            </button>
+          </div>
+          <div id="recent-events" class="space-y-2 max-h-48 overflow-y-auto scrollbar-thin p-2">
+            <div class="text-center py-4 text-slate-400">
+              <div class="loading-spinner mx-auto mb-2"></div>
+              Loading events...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Debug Panel -->
+      <div id="debug-panel" class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 hidden">
+        <h3 class="text-lg font-semibold text-slate-900 mb-4">Debug Info</h3>
+        <div id="debug-content" class="text-sm font-mono text-slate-600 bg-slate-50 p-3 rounded-lg">
+          System ready...
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Quick Add Modal -->
+  <div id="quick-add-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm max-h-[85vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 border-b border-slate-200">
+        <h3 class="text-xl font-semibold text-slate-800">Quick Add Event</h3>
+        <button id="close-quick-add" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="p-6 space-y-4">
+        <input type="text" id="quick-title" 
+               class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300" 
+               placeholder="Event title (e.g., Lunch Meeting)">
+        
+        <div class="grid grid-cols-2 gap-3">
+          <input type="date" id="quick-date" 
+                 class="px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                 value="">
+          <input type="time" id="quick-time" 
+                 class="px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                 value="14:00">
+        </div>
+        
+        <div class="flex gap-2">
+          <button onclick="nara.quickAddEvent('1h')" class="btn secondary bg-white text-primary border border-slate-200 px-3 py-2 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm flex-1">
+            1 hour
+          </button>
+          <button onclick="nara.quickAddEvent('2h')" class="btn secondary bg-white text-primary border border-slate-200 px-3 py-2 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm flex-1">
+            2 hours
+          </button>
+          <button onclick="nara.quickAddEvent('30m')" class="btn secondary bg-white text-primary border border-slate-200 px-3 py-2 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm flex-1">
+            30 min
+          </button>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-3 p-6 border-t border-slate-200">
+        <button id="cancel-quick-add" class="btn secondary bg-white text-primary border border-slate-200 px-6 py-3 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm">
+          Cancel
+        </button>
+        <button id="save-quick-add" class="btn bg-gradient-to-r from-primary to-accent text-white px-8 py-3 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-semibold">
+          Add Event
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // Clock Function
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      const dateString = now.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      const shortDateString = now.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short'
+      });
+      
+      const clockElement = document.getElementById('clock');
+      if (clockElement) {
+        clockElement.textContent = `${dateString} • ${timeString}`;
+      }
+      
+      const shortDateElement = document.getElementById('today-date-short');
+      if (shortDateElement) {
+        shortDateElement.textContent = shortDateString;
+      }
+    }
+    
+    updateClock();
+    setInterval(updateClock, 60000);
+    
+    // Initialize Nara
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Nara Voice Assistant initialized');
+    });
+  </script>
+  <script src="/static/speaker.js"></script>
+</body>
+</html>

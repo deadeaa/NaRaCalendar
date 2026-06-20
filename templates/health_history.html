@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Insights - History & Timeline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .wellness-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 25px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3b82f6;
+        }
+        
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 12px;
+            bottom: -25px;
+            width: 2px;
+            background: #e2e8f0;
+        }
+        
+        .timeline-item:last-child::after {
+            display: none;
+        }
+        
+        .history-day {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+        }
+        
+        .sleep-score-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .stress-level-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .trend-up { color: #10b981; }
+        .trend-down { color: #ef4444; }
+        .trend-neutral { color: #6b7280; }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .history-filters {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="header-container mb-8 fade-in-up">
+            <!-- Left: Back to Calendar -->
+            <div class="header-left">
+                <a href="/dashboard" class="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors backdrop-blur-sm">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+            
+            <!-- Center: Title -->
+            <div class="header-center">
+                <h1 class="text-4xl font-bold text-white mb-2">Health History & Insights</h1>
+                <p class="text-white/80 text-lg">Track your wellness journey over time</p>
+            </div>
+            
+            <!-- Right: Voice Assistant -->
+            <div class="header-right">
+                <a href="/speak" class="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors backdrop-blur-sm">
+                    <i class="fas fa-microphone"></i>
+                    Voice Assistant
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Overview Stats -->
+            <div class="wellness-card rounded-2xl p-6 fade-in-up">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-slate-800">Health Overview</h3>
+                    <div class="flex items-center gap-2 text-sm text-slate-500">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span id="history-period">Last 30 days</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-slate-700">Average Wellness Score</span>
+                            <span id="avg-wellness" class="text-lg font-bold gradient-text">-</span>
+                        </div>
+                        <div class="bg-slate-100 rounded-full h-2">
+                            <div id="avg-wellness-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-slate-700">Consistency Score</span>
+                            <span id="consistency-score" class="text-lg font-bold text-slate-800">-</span>
+                        </div>
+                        <div class="bg-slate-100 rounded-full h-2">
+                            <div id="consistency-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="total-entries">0</div>
+                            <div class="text-xs text-slate-500">Total Entries</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600" id="streak-days">0</div>
+                            <div class="text-xs text-slate-500">Day Streak</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trends & Patterns -->
+            <div class="wellness-card rounded-2xl p-6 fade-in-up" style="animation-delay: 0.1s">
+                <h3 class="text-lg font-semibold text-slate-800 mb-6">Trends & Patterns</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-slate-700">Sleep Trend</span>
+                            <span id="sleep-trend" class="text-sm flex items-center gap-1">
+                                <i class="fas fa-arrow-right"></i>
+                                <span>-</span>
+                            </span>
+                        </div>
+                        <div class="text-xs text-slate-500 mb-1">Weekly average</div>
+                        <div class="bg-blue-50 rounded-lg p-3">
+                            <div id="sleep-trend-desc" class="text-sm text-slate-700">No data available</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-slate-700">Stress Trend</span>
+                            <span id="stress-trend" class="text-sm flex items-center gap-1">
+                                <i class="fas fa-arrow-right"></i>
+                                <span>-</span>
+                            </span>
+                        </div>
+                        <div class="text-xs text-slate-500 mb-1">Weekly average</div>
+                        <div class="bg-purple-50 rounded-lg p-3">
+                            <div id="stress-trend-desc" class="text-sm text-slate-700">No data available</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="wellness-card rounded-2xl p-6 fade-in-up" style="animation-delay: 0.2s">
+                <h3 class="text-lg font-semibold text-slate-800 mb-6">Quick Actions</h3>
+                
+                <div class="space-y-3">
+                    <button id="add-today-entry" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-plus"></i>
+                        Add Today's Health Check
+                    </button>
+                    
+                    <button id="export-history" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-slate-700 rounded-xl hover:bg-slate-50 transition-colors border border-slate-200">
+                        <i class="fas fa-file-export"></i>
+                        Export History
+                    </button>
+                    
+                    <button id="compare-weeks" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-slate-700 rounded-xl hover:bg-slate-50 transition-colors border border-slate-200">
+                        <i class="fas fa-chart-line"></i>
+                        Compare Weeks
+                    </button>
+                </div>
+                
+                <div class="mt-6 pt-6 border-t border-slate-100">
+                    <h4 class="text-sm font-medium text-slate-700 mb-3">View History</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <button data-days="7" class="history-filter-btn px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors">
+                            7 days
+                        </button>
+                        <button data-days="30" class="history-filter-btn px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200 transition-colors">
+                            30 days
+                        </button>
+                        <button data-days="90" class="history-filter-btn px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200 transition-colors">
+                            90 days
+                        </button>
+                        <button data-days="all" class="history-filter-btn px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200 transition-colors">
+                            All time
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="wellness-card rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 0.3s">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-slate-800">Health Metrics Over Time</h3>
+                <div class="flex items-center gap-3">
+                    <select id="chart-type" class="px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                        <option value="wellness">Wellness Score</option>
+                        <option value="sleep">Sleep Quality</option>
+                        <option value="stress">Stress Level</option>
+                        <option value="combined">Combined View</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="flex items-center justify-center h-64">
+                    <div class="text-center text-slate-400">
+                        <i class="fas fa-chart-line text-4xl mb-2"></i>
+                        <div>Chart will appear here when you have enough data</div>
+                        <div class="text-sm mt-1">Complete at least 3 daily health checks</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline History -->
+        <div class="wellness-card rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 0.4s">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-slate-800">Health History Timeline</h3>
+                <div class="flex items-center gap-2 text-sm text-slate-500">
+                    <i class="fas fa-filter"></i>
+                    <select id="timeline-filter" class="bg-transparent border-none focus:outline-none">
+                        <option value="all">All Entries</option>
+                        <option value="sleep">Sleep Only</option>
+                        <option value="stress">Stress Only</option>
+                        <option value="high-stress">High Stress Days</option>
+                        <option value="poor-sleep">Poor Sleep Days</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="timeline-container" class="space-y-6">
+                <!-- Timeline items will be dynamically inserted here -->
+                <div class="text-center py-8 text-slate-400">
+                    <i class="fas fa-history text-4xl mb-2"></i>
+                    <div>No health history yet</div>
+                    <div class="text-sm mt-1">Start by adding your first health check</div>
+                    <button id="start-history" class="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add First Entry
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily History Grid -->
+        <div class="wellness-card rounded-2xl p-6 fade-in-up" style="animation-delay: 0.5s">
+            <h3 class="text-xl font-semibold text-slate-800 mb-6">Daily Health History</h3>
+            
+            <div id="history-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- History cards will be dynamically inserted here -->
+                <div class="col-span-full text-center py-8 text-slate-400">
+                    <i class="fas fa-calendar-day text-4xl mb-2"></i>
+                    <div>Your daily health history will appear here</div>
+                    <div class="text-sm mt-1">Track your progress day by day</div>
+                </div>
+            </div>
+            
+            <div class="mt-6 pt-6 border-t border-slate-100">
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-slate-500">
+                        Showing <span id="showing-count">0</span> of <span id="total-count">0</span> entries
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="prev-page" class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button id="next-page" class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Entry Modal -->
+    <div id="add-entry-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <!-- Header -->
+            <div class="flex justify-between items-center p-6 border-b border-slate-200 sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-semibold text-slate-800">Add Health Entry</h3>
+                <button id="close-modal" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- Content -->
+            <div class="modal-content flex-1 p-6 overflow-y-auto">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Select Date</label>
+                    <input type="date" id="entry-date" class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                           value="">
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Sleep Section -->
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-moon text-purple-500"></i>
+                            Sleep Data
+                        </h4>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-2">
+                                Sleep Duration (hours)
+                            </label>
+                            <input type="number" id="entry-sleep-hours" min="0" max="12" step="0.5" 
+                                   class="w-full px-4 py-3 border border-slate-300 rounded-lg text-center font-semibold text-lg"
+                                   placeholder="7.5">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-2">
+                                Sleep Quality
+                            </label>
+                            <div class="flex justify-between text-2xl mb-3 px-4">
+                                <button class="sleep-quality-btn opacity-30" data-quality="1">😫</button>
+                                <button class="sleep-quality-btn opacity-30" data-quality="2">😔</button>
+                                <button class="sleep-quality-btn opacity-100 scale-110" data-quality="3">😐</button>
+                                <button class="sleep-quality-btn opacity-30" data-quality="4">😊</button>
+                                <button class="sleep-quality-btn opacity-30" data-quality="5">😄</button>
+                            </div>
+                            <div class="flex justify-between text-xs text-slate-500 px-2">
+                                <span>Very Poor</span>
+                                <span>Excellent</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stress Section -->
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-brain text-blue-500"></i>
+                            Stress Data
+                        </h4>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-2">
+                                Stress Level (1-10)
+                            </label>
+                            <input type="range" id="entry-stress-level" min="1" max="10" value="5" 
+                                   class="w-full h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs text-slate-500 mt-2">
+                                <span>Low</span>
+                                <span id="stress-value">5 - Moderate</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-2">
+                                Notes (Optional)
+                            </label>
+                            <textarea id="entry-notes" rows="3" 
+                                      class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Any additional notes about your day..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="flex justify-end gap-3 p-6 border-t border-slate-200 sticky bottom-0 bg-white z-10">
+                <button id="cancel-entry" class="px-6 py-3 text-slate-600 hover:text-slate-800 transition-colors font-medium border border-slate-300 rounded-lg hover:bg-slate-50">
+                    Cancel
+                </button>
+                <button id="save-entry" class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-3">
+                    <i class="fas fa-save"></i>
+                    Save Entry
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="export-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center p-6 border-b border-slate-200">
+                <h3 class="text-xl font-semibold text-slate-800">Export Health Data</h3>
+                <button id="close-export" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Date Range</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="date" id="export-start" class="px-3 py-2 border border-slate-300 rounded-lg">
+                        <input type="date" id="export-end" class="px-3 py-2 border border-slate-300 rounded-lg">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Format</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer">
+                            <input type="radio" name="export-format" value="csv" checked class="text-blue-500">
+                            <span>CSV (Excel compatible)</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer">
+                            <input type="radio" name="export-format" value="json" class="text-blue-500">
+                            <span>JSON (For developers)</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer">
+                            <input type="radio" name="export-format" value="pdf" class="text-blue-500">
+                            <span>PDF Report</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Include</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-3">
+                            <input type="checkbox" checked class="rounded text-blue-500">
+                            <span>Sleep data</span>
+                        </label>
+                        <label class="flex items-center gap-3">
+                            <input type="checkbox" checked class="rounded text-blue-500">
+                            <span>Stress data</span>
+                        </label>
+                        <label class="flex items-center gap-3">
+                            <input type="checkbox" class="rounded text-blue-500">
+                            <span>Notes</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 p-6 border-t border-slate-200">
+                <button id="cancel-export" class="px-6 py-3 text-slate-600 hover:text-slate-800 font-medium">
+                    Cancel
+                </button>
+                <button id="confirm-export" class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
+                    <i class="fas fa-download mr-2"></i>
+                    Export Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        class HealthHistory {
+            constructor() {
+                this.healthData = {};
+                this.history = [];
+                this.currentFilter = '30';
+                this.currentPage = 1;
+                this.itemsPerPage = 9;
+                this.editingEntry = null;
+                
+                this.init();
+            }
+
+            async init() {
+                this.loadStoredData();
+                this.setupEventListeners();
+                this.renderHistory();
+                this.updateOverviewStats();
+                
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('entry-date').value = today;
+                
+                // Initialize stress slider
+                this.updateStressDisplay(5);
+            }
+
+            loadStoredData() {
+                // Load from localStorage
+                const stored = localStorage.getItem('healthHistoryData');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    this.healthData = data.healthData || {};
+                    this.history = data.history || [];
+                    
+                    // Migrate old data if needed
+                    this.migrateOldData();
+                } else {
+                    // Try to load from old format
+                    this.migrateFromOldFormat();
+                }
+                
+                console.log(`Loaded ${this.history.length} history entries`);
+            }
+
+            migrateFromOldFormat() {
+                // Check for old format data
+                const oldData = localStorage.getItem('scientificHealthData');
+                if (oldData) {
+                    try {
+                        const parsed = JSON.parse(oldData);
+                        this.history = [];
+                        
+                        // Convert old format to new format
+                        for (const [date, data] of Object.entries(parsed)) {
+                            if (data.sleep && data.stress) {
+                                this.history.push({
+                                    date: date,
+                                    sleep: data.sleep,
+                                    stress: data.stress,
+                                    wellness: this.calculateWellnessScore(data.sleep, data.stress),
+                                    notes: ''
+                                });
+                            }
+                        }
+                        
+                        // Sort by date
+                        this.history.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        
+                        this.saveStoredData();
+                        console.log(`Migrated ${this.history.length} entries from old format`);
+                    } catch (error) {
+                        console.error('Migration failed:', error);
+                    }
+                }
+            }
+
+            migrateOldData() {
+                // Ensure history has all needed fields
+                let needsSave = false;
+                this.history.forEach(entry => {
+                    if (!entry.wellness && entry.sleep && entry.stress) {
+                        entry.wellness = this.calculateWellnessScore(entry.sleep, entry.stress);
+                        needsSave = true;
+                    }
+                });
+                
+                if (needsSave) {
+                    this.saveStoredData();
+                }
+            }
+
+            saveStoredData() {
+                const data = {
+                    healthData: this.healthData,
+                    history: this.history,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('healthHistoryData', JSON.stringify(data));
+            }
+
+            setupEventListeners() {
+                // Modal controls
+                document.getElementById('add-today-entry').addEventListener('click', () => this.showAddModal());
+                document.getElementById('start-history').addEventListener('click', () => this.showAddModal());
+                document.getElementById('close-modal').addEventListener('click', () => this.hideAddModal());
+                document.getElementById('cancel-entry').addEventListener('click', () => this.hideAddModal());
+                document.getElementById('save-entry').addEventListener('click', () => this.saveEntry());
+                
+                // Export controls
+                document.getElementById('export-history').addEventListener('click', () => this.showExportModal());
+                document.getElementById('close-export').addEventListener('click', () => this.hideExportModal());
+                document.getElementById('cancel-export').addEventListener('click', () => this.hideExportModal());
+                document.getElementById('confirm-export').addEventListener('click', () => this.exportData());
+                
+                // Compare weeks
+                document.getElementById('compare-weeks').addEventListener('click', () => this.compareWeeks());
+                
+                // Date picker
+                document.getElementById('entry-date').addEventListener('change', (e) => {
+                    this.checkForExistingEntry(e.target.value);
+                });
+                
+                // Stress slider
+                const stressSlider = document.getElementById('entry-stress-level');
+                stressSlider.addEventListener('input', (e) => {
+                    this.updateStressDisplay(parseInt(e.target.value));
+                });
+                
+                // Sleep quality buttons
+                document.querySelectorAll('.sleep-quality-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const quality = parseInt(e.target.closest('button').dataset.quality);
+                        this.setSleepQuality(quality);
+                    });
+                });
+                
+                // History filters
+                document.querySelectorAll('.history-filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const days = e.target.dataset.days;
+                        this.setFilter(days);
+                    });
+                });
+                
+                // Timeline filter
+                document.getElementById('timeline-filter').addEventListener('change', (e) => {
+                    this.renderTimeline(e.target.value);
+                });
+                
+                // Chart type
+                document.getElementById('chart-type').addEventListener('change', (e) => {
+                    this.renderChart(e.target.value);
+                });
+                
+                // Pagination
+                document.getElementById('prev-page').addEventListener('click', () => this.prevPage());
+                document.getElementById('next-page').addEventListener('click', () => this.nextPage());
+                
+                // Click outside modals
+                document.getElementById('add-entry-modal').addEventListener('click', (e) => {
+                    if (e.target.id === 'add-entry-modal') this.hideAddModal();
+                });
+                
+                document.getElementById('export-modal').addEventListener('click', (e) => {
+                    if (e.target.id === 'export-modal') this.hideExportModal();
+                });
+            }
+
+            setSleepQuality(quality) {
+                document.querySelectorAll('.sleep-quality-btn').forEach((btn, index) => {
+                    const btnQuality = index + 1;
+                    if (btnQuality === quality) {
+                        btn.style.opacity = '1';
+                        btn.style.transform = 'scale(1.2)';
+                    } else {
+                        btn.style.opacity = '0.3';
+                        btn.style.transform = 'scale(1)';
+                    }
+                });
+            }
+
+            updateStressDisplay(value) {
+                let category = 'Low Stress';
+                let color = '#10b981';
+                
+                if (value >= 8) {
+                    category = 'Severe Stress';
+                    color = '#ef4444';
+                } else if (value >= 6) {
+                    category = 'High Stress';
+                    color = '#f59e0b';
+                } else if (value >= 4) {
+                    category = 'Moderate Stress';
+                    color = '#3b82f6';
+                }
+                
+                document.getElementById('stress-value').textContent = `${value} - ${category}`;
+                document.getElementById('stress-value').style.color = color;
+                
+                // Update slider gradient
+                this.updateSliderGradient(value);
+            }
+
+            updateSliderGradient(value) {
+                const slider = document.getElementById('entry-stress-level');
+                const percentage = ((value - 1) / 9) * 100;
+                
+                let gradient;
+                if (value <= 3) {
+                    gradient = `linear-gradient(to right, #10b981 0%, #10b981 ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
+                } else if (value <= 6) {
+                    gradient = `linear-gradient(to right, #10b981 0%, #f59e0b 33%, #f59e0b ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
+                } else {
+                    gradient = `linear-gradient(to right, #10b981 0%, #f59e0b 33%, #ef4444 66%, #ef4444 ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
+                }
+                
+                slider.style.background = gradient;
+            }
+
+            showAddModal(date = null) {
+                if (date) {
+                    document.getElementById('entry-date').value = date;
+                } else {
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('entry-date').value = today;
+                }
+                
+                // Reset form
+                document.getElementById('entry-sleep-hours').value = '';
+                this.setSleepQuality(3);
+                document.getElementById('entry-stress-level').value = 5;
+                this.updateStressDisplay(5);
+                document.getElementById('entry-notes').value = '';
+                this.editingEntry = null;
+                
+                // Check for existing entry
+                this.checkForExistingEntry(document.getElementById('entry-date').value);
+                
+                document.getElementById('add-entry-modal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            hideAddModal() {
+                document.getElementById('add-entry-modal').classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+
+            checkForExistingEntry(date) {
+                const existingEntry = this.history.find(entry => entry.date === date);
+                
+                if (existingEntry) {
+                    this.editingEntry = existingEntry;
+                    
+                    // Fill form with existing data
+                    document.getElementById('entry-sleep-hours').value = existingEntry.sleep.duration || '';
+                    this.setSleepQuality(existingEntry.sleep.quality || 3);
+                    document.getElementById('entry-stress-level').value = existingEntry.stress.scale || 5;
+                    this.updateStressDisplay(existingEntry.stress.scale || 5);
+                    document.getElementById('entry-notes').value = existingEntry.notes || '';
+                    
+                    // Update button text
+                    document.getElementById('save-entry').innerHTML = `
+                        <i class="fas fa-edit"></i>
+                        Update Entry
+                    `;
+                } else {
+                    this.editingEntry = null;
+                    document.getElementById('save-entry').innerHTML = `
+                        <i class="fas fa-save"></i>
+                        Save Entry
+                    `;
+                }
+            }
+
+            saveEntry() {
+                const date = document.getElementById('entry-date').value;
+                const sleepHours = parseFloat(document.getElementById('entry-sleep-hours').value);
+                const stressLevel = parseInt(document.getElementById('entry-stress-level').value);
+                const notes = document.getElementById('entry-notes').value.trim();
+                
+                // Get sleep quality
+                let sleepQuality = 3;
+                document.querySelectorAll('.sleep-quality-btn').forEach((btn, index) => {
+                    if (btn.style.opacity === '1') {
+                        sleepQuality = index + 1;
+                    }
+                });
+                
+                if (!sleepHours || sleepHours < 0 || sleepHours > 12) {
+                    this.showNotification('Please enter valid sleep duration (0-12 hours)', 'error');
+                    return;
+                }
+                
+                // Calculate scores
+                const sleepScore = this.calculateSleepScore(sleepHours, sleepQuality);
+                const stressSymptoms = []; // Empty for manual entry
+                const stressData = this.calculateStressData(stressLevel, stressSymptoms);
+                const wellnessScore = this.calculateWellnessScore(
+                    { duration: sleepHours, quality: sleepQuality, score: sleepScore },
+                    stressData
+                );
+                
+                const entry = {
+                    date: date,
+                    sleep: {
+                        duration: sleepHours,
+                        quality: sleepQuality,
+                        score: sleepScore
+                    },
+                    stress: stressData,
+                    wellness: wellnessScore,
+                    notes: notes,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Add or update entry
+                if (this.editingEntry) {
+                    const index = this.history.findIndex(e => e.date === date);
+                    if (index !== -1) {
+                        this.history[index] = entry;
+                    }
+                } else {
+                    this.history.push(entry);
+                }
+                
+                // Sort by date (newest first)
+                this.history.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                // Save to localStorage
+                this.saveStoredData();
+                
+                // Update UI
+                this.hideAddModal();
+                this.renderHistory();
+                this.updateOverviewStats();
+                this.renderTimeline();
+                
+                this.showNotification(
+                    this.editingEntry ? 'Entry updated successfully!' : 'Health entry saved!',
+                    'success'
+                );
+            }
+
+            calculateSleepScore(duration, quality) {
+                let score = 5;
+                
+                if (duration >= 7 && duration <= 9) score += 3;
+                else if (duration >= 6 && duration < 7) score += 1;
+                else if (duration > 9 && duration <= 10) score += 1;
+                else if (duration < 6) score -= 2;
+                else if (duration > 10) score -= 1;
+                
+                score += (quality - 3);
+                
+                return Math.max(1, Math.min(10, Math.round(score)));
+            }
+
+            calculateStressData(scale, symptoms) {
+                let level = scale + (symptoms.length * 0.5);
+                level = Math.min(10, level);
+                
+                let category = 'low';
+                if (level >= 8) category = 'severe';
+                else if (level >= 6) category = 'high';
+                else if (level >= 4) category = 'moderate';
+                
+                return {
+                    scale: scale,
+                    symptoms: symptoms,
+                    level: level,
+                    category: category
+                };
+            }
+
+            calculateWellnessScore(sleepData, stressData) {
+                let score = 6;
+                const sleepContribution = (sleepData.score / 10) * 4;
+                const stressContribution = ((10 - stressData.level) / 10) * 3;
+                const workloadContribution = 1; // Default for manual entries
+                
+                score = sleepContribution + stressContribution + workloadContribution;
+                
+                return Math.max(1, Math.min(10, Math.round(score * 10) / 10));
+            }
+
+            setFilter(days) {
+                this.currentFilter = days;
+                this.currentPage = 1;
+                
+                // Update UI
+                document.querySelectorAll('.history-filter-btn').forEach(btn => {
+                    if (btn.dataset.days === days) {
+                        btn.className = 'history-filter-btn px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors';
+                    } else {
+                        btn.className = 'history-filter-btn px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200 transition-colors';
+                    }
+                });
+                
+                // Update period text
+                let periodText = '';
+                switch(days) {
+                    case '7': periodText = 'Last 7 days'; break;
+                    case '30': periodText = 'Last 30 days'; break;
+                    case '90': periodText = 'Last 90 days'; break;
+                    case 'all': periodText = 'All time'; break;
+                }
+                document.getElementById('history-period').textContent = periodText;
+                
+                this.renderHistory();
+            }
+
+            renderHistory() {
+                // Filter history based on current filter
+                let filteredHistory = [...this.history];
+                
+                if (this.currentFilter !== 'all') {
+                    const days = parseInt(this.currentFilter);
+                    const cutoffDate = new Date();
+                    cutoffDate.setDate(cutoffDate.getDate() - days);
+                    
+                    filteredHistory = filteredHistory.filter(entry => {
+                        const entryDate = new Date(entry.date);
+                        return entryDate >= cutoffDate;
+                    });
+                }
+                
+                // Calculate pagination
+                const totalPages = Math.ceil(filteredHistory.length / this.itemsPerPage);
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+                const endIndex = startIndex + this.itemsPerPage;
+                const paginatedHistory = filteredHistory.slice(startIndex, endIndex);
+                
+                // Update counts
+                document.getElementById('showing-count').textContent = paginatedHistory.length;
+                document.getElementById('total-count').textContent = filteredHistory.length;
+                
+                // Update pagination buttons
+                document.getElementById('prev-page').disabled = this.currentPage === 1;
+                document.getElementById('next-page').disabled = this.currentPage === totalPages;
+                
+                // Render history grid
+                this.renderHistoryGrid(paginatedHistory);
+                
+                // Render timeline
+                this.renderTimeline('all');
+                
+                // Update charts
+                this.renderChart('wellness');
+                
+                // If no history, show empty state
+                if (filteredHistory.length === 0) {
+                    this.showEmptyState();
+                }
+            }
+
+            renderHistoryGrid(entries) {
+                const container = document.getElementById('history-grid');
+                
+                if (!entries || entries.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-8 text-slate-400">
+                            <i class="fas fa-calendar-day text-4xl mb-2"></i>
+                            <div>No entries found for this period</div>
+                            <button onclick="healthHistory.showAddModal()" class="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>
+                                Add First Entry
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = entries.map(entry => {
+                    const date = new Date(entry.date);
+                    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    
+                    const sleepQualityText = this.getSleepQualityText(entry.sleep.quality);
+                    const stressCategory = entry.stress.category;
+                    
+                    return `
+                        <div class="history-day rounded-xl p-4 transition-all hover:shadow-lg">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="text-sm text-slate-500">${dayName}</div>
+                                    <div class="font-bold text-slate-800">${dateStr}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-500">Wellness</div>
+                                    <div class="text-lg font-bold ${this.getWellnessColor(entry.wellness)}">${entry.wellness.toFixed(1)}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-moon text-purple-500"></i>
+                                        <span class="text-sm font-medium">Sleep</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm">${entry.sleep.duration}h</span>
+                                        <span class="sleep-score-badge ${this.getSleepScoreColor(entry.sleep.score)}">
+                                            ${entry.sleep.score}/10
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-brain text-blue-500"></i>
+                                        <span class="text-sm font-medium">Stress</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm">${entry.stress.level.toFixed(1)}/10</span>
+                                        <span class="stress-level-badge ${this.getStressColor(entry.stress.level)}">
+                                            ${stressCategory}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                ${entry.notes ? `
+                                    <div class="pt-2 border-t border-slate-100">
+                                        <div class="text-xs text-slate-600 truncate" title="${entry.notes}">
+                                            <i class="fas fa-sticky-note mr-1"></i>
+                                            ${entry.notes}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="pt-2 border-t border-slate-100 flex justify-end">
+                                    <button onclick="healthHistory.editEntry('${entry.date}')" 
+                                            class="text-xs text-blue-600 hover:text-blue-800 px-2 py-1">
+                                        <i class="fas fa-edit mr-1"></i>Edit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderTimeline(filter = 'all') {
+                const container = document.getElementById('timeline-container');
+                
+                // Filter entries
+                let filteredEntries = [...this.history];
+                
+                if (filter !== 'all') {
+                    filteredEntries = filteredEntries.filter(entry => {
+                        switch(filter) {
+                            case 'sleep':
+                                return true; // All entries have sleep data
+                            case 'stress':
+                                return true; // All entries have stress data
+                            case 'high-stress':
+                                return entry.stress.level >= 7;
+                            case 'poor-sleep':
+                                return entry.sleep.score <= 5;
+                            default:
+                                return true;
+                        }
+                    });
+                }
+                
+                // Limit to 10 most recent
+                filteredEntries = filteredEntries.slice(0, 10);
+                
+                if (filteredEntries.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fas fa-filter text-4xl mb-2"></i>
+                            <div>No entries match this filter</div>
+                            <div class="text-sm mt-1">Try a different filter or add more entries</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = filteredEntries.map(entry => {
+                    const date = new Date(entry.date);
+                    const dateStr = date.toLocaleDateString('en-US', { 
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    
+                    const sleepIcon = entry.sleep.score >= 8 ? '😊' : 
+                                     entry.sleep.score >= 6 ? '😐' : '😫';
+                    
+                    const stressIcon = entry.stress.level >= 8 ? '😰' :
+                                      entry.stress.level >= 6 ? '😟' : '😌';
+                    
+                    return `
+                        <div class="timeline-item">
+                            <div class="bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 transition-colors">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="font-bold text-slate-800">${dateStr}</div>
+                                    <div class="text-sm font-bold ${this.getWellnessColor(entry.wellness)}">
+                                        ${entry.wellness.toFixed(1)} / 10
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-3 mb-3">
+                                    <div class="bg-blue-50 rounded-lg p-3">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="text-sm font-medium text-blue-700">Sleep</span>
+                                            <span class="text-lg">${sleepIcon}</span>
+                                        </div>
+                                        <div class="text-sm text-blue-600">
+                                            ${entry.sleep.duration}h • ${this.getSleepQualityText(entry.sleep.quality)}
+                                        </div>
+                                        <div class="text-xs text-blue-500 mt-1">
+                                            Score: <strong>${entry.sleep.score}/10</strong>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-purple-50 rounded-lg p-3">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="text-sm font-medium text-purple-700">Stress</span>
+                                            <span class="text-lg">${stressIcon}</span>
+                                        </div>
+                                        <div class="text-sm text-purple-600">
+                                            Level: ${entry.stress.level.toFixed(1)}/10
+                                        </div>
+                                        <div class="text-xs text-purple-500 mt-1">
+                                            ${entry.stress.category}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                ${entry.notes ? `
+                                    <div class="bg-slate-50 rounded-lg p-3">
+                                        <div class="text-sm text-slate-700">
+                                            <i class="fas fa-sticky-note mr-2"></i>
+                                            ${entry.notes}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderChart(type) {
+                // Simple chart implementation
+                // In a real app, you would use Chart.js or similar
+                const chartContainer = document.querySelector('.chart-container');
+                
+                if (this.history.length < 3) {
+                    chartContainer.innerHTML = `
+                        <div class="flex items-center justify-center h-64">
+                            <div class="text-center text-slate-400">
+                                <i class="fas fa-chart-line text-4xl mb-2"></i>
+                                <div>Not enough data for charts</div>
+                                <div class="text-sm mt-1">Complete at least 3 daily health checks</div>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Sort by date ascending for chart
+                const sortedHistory = [...this.history].sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                // Get last 14 entries or all if less
+                const chartData = sortedHistory.slice(-14);
+                
+                let labels = [];
+                let dataset1 = [];
+                let dataset2 = [];
+                let colors = [];
+                
+                switch(type) {
+                    case 'wellness':
+                        labels = chartData.map(entry => 
+                            new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        );
+                        dataset1 = chartData.map(entry => entry.wellness);
+                        colors = chartData.map(entry => this.getWellnessColor(entry.wellness, true));
+                        break;
+                    case 'sleep':
+                        labels = chartData.map(entry => 
+                            new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        );
+                        dataset1 = chartData.map(entry => entry.sleep.score);
+                        colors = chartData.map(entry => this.getSleepScoreColor(entry.sleep.score, true));
+                        break;
+                    case 'stress':
+                        labels = chartData.map(entry => 
+                            new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        );
+                        dataset1 = chartData.map(entry => entry.stress.level);
+                        colors = chartData.map(entry => this.getStressColor(entry.stress.level, true));
+                        break;
+                }
+                
+                // Create simple SVG chart
+                const width = 600;
+                const height = 200;
+                const padding = 40;
+                
+                const maxValue = Math.max(...dataset1, 10);
+                const xScale = (width - padding * 2) / (labels.length - 1);
+                const yScale = (height - padding * 2) / maxValue;
+                
+                let svg = `
+                    <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}">
+                        <!-- Grid lines -->
+                        <g opacity="0.1">
+                            ${[0, 2, 4, 6, 8, 10].map(y => `
+                                <line x1="${padding}" y1="${height - padding - y * yScale}" 
+                                      x2="${width - padding}" y2="${height - padding - y * yScale}" 
+                                      stroke="#374151" stroke-width="1"/>
+                            `).join('')}
+                        </g>
+                        
+                        <!-- Data line -->
+                        <polyline fill="none" stroke="#3b82f6" stroke-width="2" 
+                                  points="${dataset1.map((value, i) => 
+                                      `${padding + i * xScale},${height - padding - value * yScale}`
+                                  ).join(' ')}"/>
+                        
+                        <!-- Data points -->
+                        ${dataset1.map((value, i) => `
+                            <circle cx="${padding + i * xScale}" 
+                                    cy="${height - padding - value * yScale}" 
+                                    r="4" fill="${colors[i]}" stroke="white" stroke-width="2"/>
+                        `).join('')}
+                        
+                        <!-- Labels -->
+                        <g transform="translate(0, ${height - padding + 20})" font-size="10" fill="#6b7280">
+                            ${labels.map((label, i) => `
+                                <text x="${padding + i * xScale}" y="0" text-anchor="middle">${label}</text>
+                            `).join('')}
+                        </g>
+                    </svg>
+                `;
+                
+                chartContainer.innerHTML = svg;
+            }
+
+            updateOverviewStats() {
+                if (this.history.length === 0) {
+                    document.getElementById('avg-wellness').textContent = '-';
+                    document.getElementById('avg-wellness-bar').style.width = '0%';
+                    document.getElementById('consistency-score').textContent = '-';
+                    document.getElementById('consistency-bar').style.width = '0%';
+                    document.getElementById('total-entries').textContent = '0';
+                    document.getElementById('streak-days').textContent = '0';
+                    
+                    document.getElementById('sleep-trend').innerHTML = '<i class="fas fa-minus"></i><span>-</span>';
+                    document.getElementById('stress-trend').innerHTML = '<i class="fas fa-minus"></i><span>-</span>';
+                    
+                    return;
+                }
+                
+                // Calculate average wellness
+                const avgWellness = this.history.reduce((sum, entry) => sum + entry.wellness, 0) / this.history.length;
+                document.getElementById('avg-wellness').textContent = avgWellness.toFixed(1);
+                document.getElementById('avg-wellness-bar').style.width = `${avgWellness * 10}%`;
+                document.getElementById('avg-wellness-bar').style.backgroundColor = this.getWellnessColor(avgWellness, true);
+                
+                // Calculate consistency (days in last 7 with entries)
+                const last7Days = Array.from({length: 7}, (_, i) => {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    return date.toISOString().split('T')[0];
+                });
+                
+                const entriesLast7Days = last7Days.filter(date => 
+                    this.history.some(entry => entry.date === date)
+                ).length;
+                
+                const consistency = Math.round((entriesLast7Days / 7) * 100);
+                document.getElementById('consistency-score').textContent = `${consistency}%`;
+                document.getElementById('consistency-bar').style.width = `${consistency}%`;
+                document.getElementById('consistency-bar').style.backgroundColor = consistency >= 70 ? '#10b981' : 
+                                                                                  consistency >= 40 ? '#f59e0b' : '#ef4444';
+                
+                // Update counts
+                document.getElementById('total-entries').textContent = this.history.length;
+                
+                // Calculate current streak
+                const streak = this.calculateStreak();
+                document.getElementById('streak-days').textContent = streak;
+                
+                // Calculate trends (last 7 days vs previous 7 days)
+                this.calculateTrends();
+            }
+
+            calculateStreak() {
+                if (this.history.length === 0) return 0;
+                
+                // Sort by date descending
+                const sorted = [...this.history].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                let streak = 0;
+                let currentDate = new Date();
+                
+                // Check for today's entry
+                const today = currentDate.toISOString().split('T')[0];
+                if (sorted[0].date === today) {
+                    streak = 1;
+                    currentDate.setDate(currentDate.getDate() - 1);
+                }
+                
+                // Check consecutive days
+                for (let i = streak > 0 ? 1 : 0; i < sorted.length; i++) {
+                    const expectedDate = currentDate.toISOString().split('T')[0];
+                    
+                    if (sorted[i].date === expectedDate) {
+                        streak++;
+                        currentDate.setDate(currentDate.getDate() - 1);
+                    } else {
+                        break;
+                    }
+                }
+                
+                return streak;
+            }
+
+            calculateTrends() {
+                if (this.history.length < 7) {
+                    document.getElementById('sleep-trend').innerHTML = '<i class="fas fa-minus"></i><span>-</span>';
+                    document.getElementById('stress-trend').innerHTML = '<i class="fas fa-minus"></i><span>-</span>';
+                    return;
+                }
+                
+                // Get last 7 entries
+                const recent = this.history.slice(0, 7);
+                const older = this.history.slice(7, 14);
+                
+                if (older.length < 7) {
+                    document.getElementById('sleep-trend').innerHTML = '<i class="fas fa-minus"></i><span>-</span>';
+                    document.getElementById('stress-trend').innerHTML = '<i class="fas fa-minus"></i><span>-</span>';
+                    return;
+                }
+                
+                // Calculate averages
+                const recentSleepAvg = recent.reduce((sum, entry) => sum + entry.sleep.score, 0) / recent.length;
+                const olderSleepAvg = older.reduce((sum, entry) => sum + entry.sleep.score, 0) / older.length;
+                const recentStressAvg = recent.reduce((sum, entry) => sum + entry.stress.level, 0) / recent.length;
+                const olderStressAvg = older.reduce((sum, entry) => sum + entry.stress.level, 0) / older.length;
+                
+                // Calculate trends
+                const sleepTrend = recentSleepAvg - olderSleepAvg;
+                const stressTrend = recentStressAvg - olderStressAvg;
+                
+                // Update sleep trend
+                const sleepTrendEl = document.getElementById('sleep-trend');
+                if (sleepTrend > 0.5) {
+                    sleepTrendEl.innerHTML = '<i class="fas fa-arrow-up trend-up"></i><span class="trend-up">Improving</span>';
+                    document.getElementById('sleep-trend-desc').textContent = `Sleep quality improved by ${sleepTrend.toFixed(1)} points`;
+                } else if (sleepTrend < -0.5) {
+                    sleepTrendEl.innerHTML = '<i class="fas fa-arrow-down trend-down"></i><span class="trend-down">Declining</span>';
+                    document.getElementById('sleep-trend-desc').textContent = `Sleep quality declined by ${Math.abs(sleepTrend).toFixed(1)} points`;
+                } else {
+                    sleepTrendEl.innerHTML = '<i class="fas fa-minus trend-neutral"></i><span class="trend-neutral">Stable</span>';
+                    document.getElementById('sleep-trend-desc').textContent = 'Sleep quality remains stable';
+                }
+                
+                // Update stress trend
+                const stressTrendEl = document.getElementById('stress-trend');
+                if (stressTrend > 0.5) {
+                    stressTrendEl.innerHTML = '<i class="fas fa-arrow-up trend-down"></i><span class="trend-down">Increasing</span>';
+                    document.getElementById('stress-trend-desc').textContent = `Stress increased by ${stressTrend.toFixed(1)} points`;
+                } else if (stressTrend < -0.5) {
+                    stressTrendEl.innerHTML = '<i class="fas fa-arrow-down trend-up"></i><span class="trend-up">Decreasing</span>';
+                    document.getElementById('stress-trend-desc').textContent = `Stress decreased by ${Math.abs(stressTrend).toFixed(1)} points`;
+                } else {
+                    stressTrendEl.innerHTML = '<i class="fas fa-minus trend-neutral"></i><span class="trend-neutral">Stable</span>';
+                    document.getElementById('stress-trend-desc').textContent = 'Stress level remains stable';
+                }
+            }
+
+            editEntry(date) {
+                this.showAddModal(date);
+            }
+
+            prevPage() {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                    this.renderHistory();
+                }
+            }
+
+            nextPage() {
+                const totalPages = Math.ceil(this.history.length / this.itemsPerPage);
+                if (this.currentPage < totalPages) {
+                    this.currentPage++;
+                    this.renderHistory();
+                }
+            }
+
+            showExportModal() {
+                const today = new Date().toISOString().split('T')[0];
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 30);
+                
+                document.getElementById('export-start').value = weekAgo.toISOString().split('T')[0];
+                document.getElementById('export-end').value = today;
+                
+                document.getElementById('export-modal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            hideExportModal() {
+                document.getElementById('export-modal').classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+
+            exportData() {
+                const startDate = document.getElementById('export-start').value;
+                const endDate = document.getElementById('export-end').value;
+                const format = document.querySelector('input[name="export-format"]:checked').value;
+                
+                // Filter entries by date range
+                const filteredEntries = this.history.filter(entry => {
+                    return entry.date >= startDate && entry.date <= endDate;
+                });
+                
+                if (filteredEntries.length === 0) {
+                    this.showNotification('No data found for selected date range', 'error');
+                    return;
+                }
+                
+                let dataStr, mimeType, filename;
+                
+                switch(format) {
+                    case 'csv':
+                        dataStr = this.convertToCSV(filteredEntries);
+                        mimeType = 'text/csv';
+                        filename = `health-history-${startDate}-to-${endDate}.csv`;
+                        break;
+                    case 'json':
+                        dataStr = JSON.stringify(filteredEntries, null, 2);
+                        mimeType = 'application/json';
+                        filename = `health-history-${startDate}-to-${endDate}.json`;
+                        break;
+                    case 'pdf':
+                        this.showNotification('PDF export coming soon!', 'info');
+                        this.hideExportModal();
+                        return;
+                }
+                
+                // Create download link
+                const blob = new Blob([dataStr], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.hideExportModal();
+                this.showNotification(`Exported ${filteredEntries.length} entries as ${format.toUpperCase()}`, 'success');
+            }
+
+            convertToCSV(entries) {
+                const headers = ['Date', 'Sleep Hours', 'Sleep Quality', 'Sleep Score', 'Stress Level', 'Stress Category', 'Wellness Score', 'Notes'];
+                const rows = entries.map(entry => [
+                    entry.date,
+                    entry.sleep.duration,
+                    this.getSleepQualityText(entry.sleep.quality),
+                    entry.sleep.score,
+                    entry.stress.level.toFixed(1),
+                    entry.stress.category,
+                    entry.wellness.toFixed(1),
+                    `"${(entry.notes || '').replace(/"/g, '""')}"`
+                ]);
+                
+                return [headers, ...rows].map(row => row.join(',')).join('\n');
+            }
+
+            compareWeeks() {
+                if (this.history.length < 7) {
+                    this.showNotification('Need at least 7 days of data to compare weeks', 'error');
+                    return;
+                }
+                
+                const week1 = this.history.slice(0, 7);
+                const week2 = this.history.slice(7, 14);
+                
+                const week1AvgWellness = week1.reduce((sum, entry) => sum + entry.wellness, 0) / week1.length;
+                const week2AvgWellness = week2.reduce((sum, entry) => sum + entry.wellness, 0) / week2.length;
+                const week1AvgSleep = week1.reduce((sum, entry) => sum + entry.sleep.score, 0) / week1.length;
+                const week2AvgSleep = week2.reduce((sum, entry) => sum + entry.sleep.score, 0) / week2.length;
+                const week1AvgStress = week1.reduce((sum, entry) => sum + entry.stress.level, 0) / week1.length;
+                const week2AvgStress = week2.reduce((sum, entry) => sum + entry.stress.level, 0) / week2.length;
+                
+                const comparison = `
+                    <div class="space-y-4">
+                        <div class="text-lg font-semibold text-slate-800">Weekly Comparison</div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <div class="text-sm text-blue-700 mb-1">Last Week</div>
+                                <div class="text-2xl font-bold text-blue-800">${week1AvgWellness.toFixed(1)}</div>
+                                <div class="text-xs text-blue-600">Avg. Wellness</div>
+                            </div>
+                            
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <div class="text-sm text-purple-700 mb-1">Previous Week</div>
+                                <div class="text-2xl font-bold text-purple-800">${week2AvgWellness.toFixed(1)}</div>
+                                <div class="text-xs text-purple-600">Avg. Wellness</div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-slate-600">Sleep Quality</span>
+                                <span class="font-medium ${week1AvgSleep > week2AvgSleep ? 'text-green-600' : 'text-red-600'}">
+                                    ${week1AvgSleep > week2AvgSleep ? '↗' : '↘'} ${Math.abs(week1AvgSleep - week2AvgSleep).toFixed(1)}
+                                </span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-slate-600">Stress Level</span>
+                                <span class="font-medium ${week1AvgStress < week2AvgStress ? 'text-green-600' : 'text-red-600'}">
+                                    ${week1AvgStress < week2AvgStress ? '↘' : '↗'} ${Math.abs(week1AvgStress - week2AvgStress).toFixed(1)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                this.showNotification(comparison, 'info');
+            }
+
+            showEmptyState() {
+                const timelineContainer = document.getElementById('timeline-container');
+                if (this.history.length === 0) {
+                    timelineContainer.innerHTML = `
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fas fa-history text-4xl mb-2"></i>
+                            <div>No health history yet</div>
+                            <div class="text-sm mt-1">Start tracking your wellness journey today</div>
+                            <button onclick="healthHistory.showAddModal()" class="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>
+                                Add First Entry
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+
+            // Utility methods
+            getSleepQualityText(quality) {
+                const texts = ['Very Poor', 'Poor', 'Fair', 'Good', 'Excellent'];
+                return texts[quality - 1] || 'Unknown';
+            }
+
+            getWellnessColor(score, hex = false) {
+                if (score >= 8) return hex ? '#10b981' : 'text-green-600';
+                if (score >= 6) return hex ? '#3b82f6' : 'text-blue-600';
+                if (score >= 4) return hex ? '#f59e0b' : 'text-amber-600';
+                return hex ? '#ef4444' : 'text-red-600';
+            }
+
+            getSleepScoreColor(score, hex = false) {
+                if (score >= 8) return hex ? '#10b981' : 'bg-green-100 text-green-800';
+                if (score >= 6) return hex ? '#3b82f6' : 'bg-blue-100 text-blue-800';
+                if (score >= 4) return hex ? '#f59e0b' : 'bg-amber-100 text-amber-800';
+                return hex ? '#ef4444' : 'bg-red-100 text-red-800';
+            }
+
+            getStressColor(level, hex = false) {
+                if (level >= 8) return hex ? '#ef4444' : 'bg-red-100 text-red-800';
+                if (level >= 6) return hex ? '#f59e0b' : 'bg-amber-100 text-amber-800';
+                if (level >= 4) return hex ? '#3b82f6' : 'bg-blue-100 text-blue-800';
+                return hex ? '#10b981' : 'bg-green-100 text-green-800';
+            }
+
+            showNotification(message, type = 'info') {
+                // Remove existing notifications
+                const existing = document.getElementById('health-notification');
+                if (existing) existing.remove();
+                
+                const colors = {
+                    success: 'bg-green-500',
+                    error: 'bg-red-500',
+                    info: 'bg-blue-500',
+                    warning: 'bg-yellow-500'
+                };
+                
+                const notification = document.createElement('div');
+                notification.id = 'health-notification';
+                notification.className = `fixed top-4 right-4 ${colors[type]} text-white p-4 rounded-xl shadow-2xl z-50 max-w-sm animate-fade-in`;
+                notification.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg">
+                            ${type === 'success' ? '✅' : type === 'error' ? '❌' : '💡'}
+                        </span>
+                        <div class="flex-1">${message}</div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            window.healthHistory = new HealthHistory();
+            console.log('📊 Health History initialized');
+        });
+    </script>
+</body>
+</html>

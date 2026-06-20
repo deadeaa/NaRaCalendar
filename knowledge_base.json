@@ -1,0 +1,290 @@
+{
+  "emotion_patterns": {
+    "morning_sadness": {
+      "conditions": [
+        "time=morning",
+        "emotion=sad",
+        "energy_level=low"
+      ],
+      "conclusion": "possible_sleep_issue",
+      "confidence": 0.7,
+      "explanation": "Morning sadness is often related to poor sleep quality"
+    },
+    "afternoon_stress": {
+      "conditions": [
+        "time=afternoon",
+        "emotion=angry",
+        "workload=high"
+      ],
+      "conclusion": "work_burnout",
+      "confidence": 0.8,
+      "explanation": "Anger in the afternoon with high workload indicates burnout"
+    },
+    "weekend_happy": {
+      "conditions": [
+        "day=weekend",
+        "emotion=happy",
+        "social_activity=yes"
+      ],
+      "conclusion": "social_wellbeing",
+      "confidence": 0.9,
+      "explanation": "Happiness on weekends with social activities shows good social wellbeing"
+    },
+    "schedule_induced_stress": {
+      "conditions": [
+        "schedule_density=high",
+        "emotion=angry",
+        "time=afternoon"
+      ],
+      "conclusion": "overwhelmed_schedule",
+      "confidence": 0.85,
+      "explanation": "Anger with a dense schedule indicates being overwhelmed"
+    },
+    "work_life_imbalance": {
+      "conditions": [
+        "work_hours=high",
+        "personal_time=low",
+        "emotion=sad"
+      ],
+      "conclusion": "imbalance_detected",
+      "confidence": 0.75,
+      "explanation": "Sadness with high work hours and low personal time suggests imbalance"
+    }
+  },
+  "recommendation_rules": {
+    "happy": {
+      "productivity": "high",
+      "social_boost": true,
+      "learning_opportunity": "excellent",
+      "suggestions": [
+        {
+          "action": "tackle_challenging_tasks",
+          "priority": 1
+        },
+        {
+          "action": "socialize_and_network",
+          "priority": 2
+        },
+        {
+          "action": "learn_new_skill",
+          "priority": 3
+        }
+      ]
+    },
+    "sad": {
+      "productivity": "low",
+      "needs_self_care": true,
+      "social_support_needed": true,
+      "suggestions": [
+        {
+          "action": "gentle_exercise",
+          "priority": 1
+        },
+        {
+          "action": "talk_to_friend",
+          "priority": 2
+        },
+        {
+          "action": "creative_expression",
+          "priority": 3
+        }
+      ]
+    },
+    "angry": {
+      "energy_level": "high",
+      "needs_outlet": true,
+      "conflict_risk": "medium",
+      "suggestions": [
+        {
+          "action": "physical_activity",
+          "priority": 1
+        },
+        {
+          "action": "mindfulness_practice",
+          "priority": 2
+        },
+        {
+          "action": "problem_solving",
+          "priority": 3
+        }
+      ]
+    },
+    "neutral": {
+      "productivity": "moderate",
+      "focus_level": "high",
+      "decision_making": "good",
+      "suggestions": [
+        {
+          "action": "deep_work",
+          "priority": 1
+        },
+        {
+          "action": "strategic_planning",
+          "priority": 2
+        },
+        {
+          "action": "skill_practice",
+          "priority": 3
+        }
+      ]
+    },
+    "fear": {
+      "productivity": "low",
+      "needs_reassurance": true,
+      "risk_aversion": "high",
+      "suggestions": [
+        {
+          "action": "break_down_tasks",
+          "priority": 1
+        },
+        {
+          "action": "seek_support",
+          "priority": 2
+        },
+        {
+          "action": "gradual_exposure",
+          "priority": 3
+        }
+      ]
+    },
+    "excited": {
+      "productivity": "high",
+      "creativity": "high",
+      "distraction_risk": "medium",
+      "suggestions": [
+        {
+          "action": "channel_energy",
+          "priority": 1
+        },
+        {
+          "action": "start_new_project",
+          "priority": 2
+        },
+        {
+          "action": "share_excitement",
+          "priority": 3
+        }
+      ]
+    }
+  },
+  "context_factors": {
+    "time_of_day_impact": {
+      "morning": {
+        "productivity": 0.8,
+        "mood_volatility": 0.3
+      },
+      "afternoon": {
+        "productivity": 0.6,
+        "mood_volatility": 0.5
+      },
+      "evening": {
+        "productivity": 0.4,
+        "mood_volatility": 0.7
+      },
+      "night": {
+        "productivity": 0.3,
+        "mood_volatility": 0.8
+      }
+    },
+    "day_type_impact": {
+      "weekday": {
+        "stress_level": 0.7,
+        "social_opportunity": 0.3
+      },
+      "weekend": {
+        "stress_level": 0.2,
+        "social_opportunity": 0.8
+      }
+    },
+    "schedule_density_impact": {
+      "low": {
+        "stress_risk": 0.2,
+        "free_time": 0.8
+      },
+      "medium": {
+        "stress_risk": 0.5,
+        "free_time": 0.5
+      },
+      "high": {
+        "stress_risk": 0.8,
+        "free_time": 0.2
+      },
+      "very_high": {
+        "stress_risk": 0.9,
+        "free_time": 0.1
+      }
+    }
+  },
+  "user_profiles": {
+    "introvert": {
+      "recharge_method": "solitude",
+      "social_limit": 3,
+      "preferred_activities": [
+        "reading",
+        "writing",
+        "individual_sports",
+        "meditation"
+      ],
+      "stress_response": "withdraw"
+    },
+    "extrovert": {
+      "recharge_method": "socializing",
+      "social_limit": 8,
+      "preferred_activities": [
+        "group_activities",
+        "parties",
+        "team_sports",
+        "networking"
+      ],
+      "stress_response": "seek_company"
+    },
+    "ambivert": {
+      "recharge_method": "balanced",
+      "social_limit": 5,
+      "preferred_activities": [
+        "small_groups",
+        "varied_activities",
+        "casual_socializing"
+      ],
+      "stress_response": "mixed"
+    }
+  },
+  "schedule_recommendations": {
+    "high_density": {
+      "immediate": [
+        "Schedule 15-minute breaks between meetings",
+        "Block 1-hour focus time daily",
+        "Prioritize top 3 tasks only"
+      ],
+      "long_term": [
+        "Delegate lower-priority tasks",
+        "Learn to say no to non-essential meetings",
+        "Implement time blocking system"
+      ]
+    },
+    "work_life_balance": {
+      "work_hours_high": [
+        "Set strict work end time",
+        "Schedule personal time in calendar",
+        "Turn off work notifications after hours"
+      ],
+      "no_personal_time": [
+        "Block personal time first",
+        "Schedule hobbies as appointments",
+        "Practice digital detox on weekends"
+      ]
+    },
+    "stress_management": {
+      "preventive": [
+        "Morning meditation routine",
+        "Weekly review of commitments",
+        "Regular exercise schedule"
+      ],
+      "reactive": [
+        "5-minute breathing exercises",
+        "Quick walk outside",
+        "Listen to calming music"
+      ]
+    }
+  }
+}

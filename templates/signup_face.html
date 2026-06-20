@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Verification - Final Step</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass {
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+            backdrop-filter: blur(8px);
+        }
+        #video, #preview {
+            transform: scaleX(-1); /* Mirror effect */
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-emerald-900 to-slate-900 flex items-center justify-center p-6">
+
+    <div class="w-full max-w-2xl glass rounded-3xl shadow-2xl p-8 text-gray-100">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-semibold mb-2">Face Verification</h1>
+            <p class="text-emerald-200/80">Final step: Register your face for secure login</p>
+            <p class="text-sm text-emerald-300 mt-2">Email: <span id="user-email" class="font-semibold">{{ email }}</span></p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Camera Section -->
+            <div class="p-4 rounded-xl bg-gradient-to-b from-white/3 to-transparent">
+                <div class="rounded-lg bg-black/60 overflow-hidden relative">
+                    <video id="video" autoplay playsinline class="w-full h-64 object-cover bg-black/70"></video>
+                    <img id="preview" class="w-full h-64 object-cover hidden" alt="Face preview" />
+                    <div id="camera-msg" class="absolute inset-0 flex items-center justify-center text-sm text-emerald-100/90 p-4 text-center">
+                        Starting camera...
+                    </div>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                    <button id="btn-capture" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg transition flex items-center justify-center gap-2">
+                        📸 Take Photo
+                    </button>
+                    <button id="btn-retake" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-3 rounded-lg transition hidden">
+                        🔄 Retake
+                    </button>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="p-4 rounded-xl bg-gradient-to-b from-white/3 to-transparent">
+                <h3 class="font-semibold mb-3 text-emerald-300">Instructions</h3>
+                <ul class="space-y-2 text-sm text-emerald-100/80">
+                    <li class="flex items-start gap-2">
+                        <span class="text-emerald-400">✓</span>
+                        <span>Ensure good lighting on your face</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-emerald-400">✓</span>
+                        <span>Look directly at the camera</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-emerald-400">✓</span>
+                        <span>Remove sunglasses or hats</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-emerald-400">✓</span>
+                        <span>Keep a neutral expression</span>
+                    </li>
+                </ul>
+
+                <div class="mt-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <p class="text-sm text-blue-200">
+                        <span class="font-semibold">Note:</span> Your face data is stored securely and used only for authentication.
+                    </p>
+                </div>
+
+                <div class="mt-6">
+                    <button id="btn-submit" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg transition hidden">
+                        ✅ Complete Registration
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to form -->
+        <div class="mt-6 text-center">
+            <a href="/signup" class="text-emerald-300 hover:text-emerald-200 text-sm inline-flex items-center gap-1">
+                ← Back to form
+            </a>
+        </div>
+    </div>
+
+    <!-- hidden canvas for capture -->
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <!-- toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg hidden z-50"></div>
+
+<script>
+    let stream = null;
+    let faceCaptured = false;
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const preview = document.getElementById('preview');
+    const toast = document.getElementById('toast');
+    const cameraMsg = document.getElementById('camera-msg');
+
+    const btnCapture = document.getElementById('btn-capture');
+    const btnRetake = document.getElementById('btn-retake');
+    const btnSubmit = document.getElementById('btn-submit');
+
+    // Start camera automatically
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 640 }, 
+                    height: { ideal: 480 }, 
+                    facingMode: "user" 
+                }, 
+                audio: false 
+            });
+            video.srcObject = stream;
+            
+            await video.play();
+            
+            cameraMsg.textContent = 'Position your face and click "Take Photo"';
+        } catch (e) {
+            cameraMsg.textContent = 'Camera error - Please allow camera access';
+            showToast('Camera access not available.', true);
+        }
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+        }
+    }
+
+    function captureFace() {
+        if (!video || video.readyState < 2) { 
+            showToast('Camera not ready', true); 
+            return; 
+        }
+        
+        const w = video.videoWidth, h = video.videoHeight;
+        canvas.width = w; 
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        
+        // Mirror image for natural preview
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, w, h);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        preview.src = dataUrl;
+        preview.classList.remove('hidden');
+        video.classList.add('hidden');
+        faceCaptured = true;
+        
+        btnCapture.classList.add('hidden');
+        btnRetake.classList.remove('hidden');
+        btnSubmit.classList.remove('hidden');
+        
+        showToast('Face captured successfully');
+        cameraMsg.textContent = 'Face captured! Click "Complete Registration"';
+    }
+
+    function retake() {
+        preview.classList.add('hidden');
+        video.classList.remove('hidden');
+        btnCapture.classList.remove('hidden');
+        btnRetake.classList.add('hidden');
+        btnSubmit.classList.add('hidden');
+        faceCaptured = false;
+        cameraMsg.textContent = 'Position your face and click "Take Photo"';
+    }
+
+    function showToast(msg, isError = false) {
+        toast.textContent = msg;
+        toast.classList.remove('hidden');
+        toast.classList.toggle('bg-rose-600', !!isError);
+        toast.classList.toggle('bg-emerald-600', !isError);
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // Event listeners
+    btnCapture.addEventListener('click', captureFace);
+    btnRetake.addEventListener('click', retake);
+
+    btnSubmit.addEventListener('click', async () => {
+        if (!faceCaptured) { 
+            showToast('Take a photo of your face first', true); 
+            return; 
+        }
+
+        showToast('Registering your face...');
+        btnSubmit.disabled = true;
+
+        try {
+            const response = await fetch('/api/signup-face', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: preview.src })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Account created successfully! Redirecting...');
+                setTimeout(() => window.location.href = '/dashboard', 1500);
+            } else {
+                showToast(result.error || 'Registration failed', true);
+                btnSubmit.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Network error. Please try again.', true);
+            btnSubmit.disabled = false;
+        }
+    });
+
+    // Start camera when page loads
+    startCamera();
+
+    // cleanup when leaving page
+    window.addEventListener('beforeunload', stopCamera);
+</script>
+</body>
+</html>

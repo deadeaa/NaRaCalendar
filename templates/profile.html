@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Emotion Calendar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#10b981',
+            secondary: '#64748b',
+            accent: '#059669',
+            error: '#ef4444',
+            neutral: '#f8fafc',
+            dark: '#1e293b',
+            light: '#f1f5f9',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Arial', 'Helvetica', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-in',
+            'slide-in': 'slideIn 0.3s ease-out',
+            'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideIn: {
+              '0%': { transform: 'translateX(-20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            pulseSoft: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.7' },
+            },
+          },
+          boxShadow: {
+            'soft': '0 2px 15px rgba(0, 0, 0, 0.08)',
+            'medium': '0 4px 25px rgba(0, 0, 0, 0.12)',
+            'strong': '0 8px 40px rgba(0, 0, 0, 0.15)',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    .card-box {
+      transition: all 0.3s ease;
+    }
+    .card-box:hover {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    .btn {
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    .personality-option {
+      transition: all 0.3s ease;
+    }
+    
+    .personality-option.selected {
+      border-color: #10b981;
+      background-color: rgba(16, 185, 129, 0.05);
+    }
+    
+    .personality-option:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .loading-dots {
+      display: inline-block;
+    }
+    
+    .loading-dots span {
+      animation: blink 1.4s infinite both;
+      display: inline-block;
+      margin: 0 2px;
+    }
+    
+    .loading-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    
+    .loading-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .pulse-animation {
+      animation: pulse 0.5s ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 min-h-screen font-sans text-slate-900 antialiased p-4 md:p-6">
+  
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md rounded-2xl shadow-soft border border-slate-200/50 p-4 mb-6 flex justify-between items-center">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center text-white font-bold text-lg">
+        {{ name[0]|upper if name else 'U' }}
+      </div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-slate-900">Settings ⚙️</h1>
+        <p class="text-secondary text-sm">Manage your account and preferences</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-4">
+      <small id="clock" class="text-secondary text-sm font-medium"></small>
+      <div class="relative group">
+        <div class="user w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary hover:text-white transition-all duration-300 text-lg">
+          👤
+        </div>
+        <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-strong border border-slate-200/50 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+          <a href="/dashboard" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-home mr-2"></i>Dashboard
+          </a>
+          <a href="/profile" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-user mr-2"></i>Profile
+          </a>
+          <a href="/logout" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area with Sidebar -->
+  <div class="main-content bg-white/95 backdrop-blur-xl rounded-3xl shadow-medium border border-slate-200/50 overflow-hidden flex min-h-[700px] mb-8">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar w-20 md:w-24 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center py-6 px-2 text-slate-200 shadow-inner">
+      <div class="brand font-bold text-xs tracking-wider text-slate-100 mb-6 uppercase">Settings</div>
+      <nav class="flex flex-col space-y-2 flex-1">
+        <a href="/dashboard" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Dashboard">
+          <span class="relative z-10">🏠</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <!-- <a href="/chat" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="AI Chat">
+          <span class="relative z-10">💬</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a> -->
+        <a href="/speak" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Voice Assistant">
+          <span class="relative z-10">🎙️</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/calendar" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white text-lg transition-all duration-300 bg-primary/20 border border-primary/30 hover:bg-primary/30 hover:scale-105 hover:shadow-lg relative overflow-hidden group active" title="Calendar">
+          <span class="relative z-10">📅</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/health" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Health Tracker">
+          <span class="relative z-10">❤️</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/emotion" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Face Emotion Scan">
+          <span class="relative z-10">😊</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+      </nav>
+      <div class="mt-auto">
+        <a href="/dashboard" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Back to Dashboard">
+          <span class="relative z-10">←</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 md:p-8 overflow-auto scrollbar-thin">
+      
+      <!-- Welcome Section -->
+      <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Settings Overview</h2>
+            <p class="text-secondary">Customize your Emotion Calendar experience</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personality Settings Card -->
+      <div id="personality" class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 hover:shadow-medium transition-all duration-300 mb-6">
+        <div class="flex items-center mb-6">
+          <div class="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-50 rounded-xl flex items-center justify-center mr-4 border border-blue-200">
+            <i class="fas fa-brain text-blue-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">Personality Settings</h2>
+            <p class="text-secondary">Set your personality type for personalized recommendations</p>
+          </div>
+        </div>
+        
+        <div class="mb-8">
+          <div class="mb-6">
+            <h4 class="font-semibold text-lg text-slate-900 mb-2">Current Setting</h4>
+            <div id="currentPersonalityBox" class="bg-slate-50 rounded-xl p-5 border-2 border-dashed border-slate-300">
+              <div class="flex items-center">
+                <div id="currentPersonalityIcon" class="text-4xl mr-4">🤔</div>
+                <div>
+                  <div id="currentPersonalityText" class="font-bold text-lg text-slate-900">Loading...</div>
+                  <div id="currentPersonalityDesc" class="text-sm text-secondary">
+                    Fetching your personality setting...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <h4 class="font-semibold text-lg text-slate-900 mb-4">Choose Your Personality Type</h4>
+          <p class="text-secondary mb-6">
+            This helps us personalize recommendations, tips, and activity suggestions just for you.
+          </p>
+          
+          <!-- Personality Options -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Introvert -->
+            <div onclick="selectPersonality('introvert')" 
+                 class="personality-option text-left p-5 rounded-xl border-2 border-slate-200 hover:border-blue-500 transition-all cursor-pointer">
+              <div class="flex items-start mb-4">
+                <div class="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-4">
+                  📚
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-900">Introvert</h4>
+                  <p class="text-xs text-secondary">Recharge alone</p>
+                </div>
+              </div>
+              <ul class="text-sm text-slate-600 space-y-2">
+                <li><i class="fas fa-check-circle text-blue-500 mr-2"></i> Prefers quiet environments</li>
+                <li><i class="fas fa-check-circle text-blue-500 mr-2"></i> Deep one-on-one conversations</li>
+                <li><i class="fas fa-check-circle text-blue-500 mr-2"></i> Needs alone time to recharge</li>
+              </ul>
+            </div>
+            
+            <!-- Extrovert -->
+            <div onclick="selectPersonality('extrovert')" 
+                 class="personality-option text-left p-5 rounded-xl border-2 border-slate-200 hover:border-green-500 transition-all cursor-pointer">
+              <div class="flex items-start mb-4">
+                <div class="w-12 h-12 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mr-4">
+                  🎉
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-900">Extrovert</h4>
+                  <p class="text-xs text-secondary">Recharge socially</p>
+                </div>
+              </div>
+              <ul class="text-sm text-slate-600 space-y-2">
+                <li><i class="fas fa-check-circle text-green-500 mr-2"></i> Enjoys group activities</li>
+                <li><i class="fas fa-check-circle text-green-500 mr-2"></i> Energized by social interactions</li>
+                <li><i class="fas fa-check-circle text-green-500 mr-2"></i> Prefers collaborative environments</li>
+              </ul>
+            </div>
+            
+            <!-- Ambivert -->
+            <div onclick="selectPersonality('ambivert')" 
+                 class="personality-option text-left p-5 rounded-xl border-2 border-slate-200 hover:border-purple-500 transition-all cursor-pointer">
+              <div class="flex items-start mb-4">
+                <div class="w-12 h-12 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center mr-4">
+                  ⚖️
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-900">Ambivert</h4>
+                  <p class="text-xs text-secondary">Flexible</p>
+                </div>
+              </div>
+              <ul class="text-sm text-slate-600 space-y-2">
+                <li><i class="fas fa-check-circle text-purple-500 mr-2"></i> Adapts to situation</li>
+                <li><i class="fas fa-check-circle text-purple-500 mr-2"></i> Enjoys both solitude & social</li>
+                <li><i class="fas fa-check-circle text-purple-500 mr-2"></i> Balanced approach</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="flex space-x-4">
+            <button onclick="letSystemGuess()" 
+                    class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-lg font-medium transition-all btn">
+              <i class="fas fa-magic mr-2"></i> Let System Guess
+            </button>
+            <button id="savePersonalityBtn" disabled 
+                    onclick="savePersonality()"
+                    class="flex-1 bg-primary hover:bg-accent text-white py-3 rounded-lg font-medium transition-all btn disabled:opacity-50 disabled:cursor-not-allowed">
+              <i class="fas fa-save mr-2"></i> Save Personality
+            </button>
+          </div>
+        </div>
+        
+        <!-- Personality Tips -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+          <h4 class="font-bold text-lg mb-4 flex items-center text-slate-900">
+            <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+            How This Helps You
+          </h4>
+          <ul class="space-y-3 text-slate-700">
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>
+              <div>
+                <strong class="text-slate-900">Better Recommendations:</strong> Get activity suggestions that match your energy style
+              </div>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>
+              <div>
+                <strong class="text-slate-900">Stress Management:</strong> Tips tailored to your personality for dealing with stress
+              </div>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>
+              <div>
+                <strong class="text-slate-900">Schedule Optimization:</strong> Calendar suggestions that respect your social preferences
+              </div>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>
+              <div>
+                <strong class="text-slate-900">Personal Growth:</strong> Insights into how your personality affects your emotions
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Other Settings Sections (Placeholder) -->
+      <div id="profile" class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 hover:shadow-medium transition-all duration-300 mb-6">
+        <h3 class="text-xl font-bold text-slate-900 mb-6">Profile Settings</h3>
+        <p class="text-secondary mb-4">Manage your personal information and preferences.</p>
+        <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium transition-all">
+          Coming Soon
+        </button>
+      </div>
+
+      <div id="notifications" class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 hover:shadow-medium transition-all duration-300 mb-6">
+        <h3 class="text-xl font-bold text-slate-900 mb-6">Notification Settings</h3>
+        <p class="text-secondary mb-4">Customize your notification preferences.</p>
+        <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium transition-all">
+          Coming Soon
+        </button>
+      </div>
+
+    </main>
+  </div>
+  
+  <script>
+    let selectedPersonality = null;
+    
+    // Clock functionality
+    function updateClock() {
+      const now = new Date();
+      const clockElement = document.getElementById('clock');
+      if (clockElement) {
+        const timeString = now.toLocaleTimeString('id-ID', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false 
+        });
+        const dateString = now.toLocaleDateString('id-ID', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+        clockElement.textContent = `${dateString} • ${timeString}`;
+      }
+    }
+    
+    // Load current personality on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      updateClock();
+      setInterval(updateClock, 60000);
+      
+      await loadCurrentPersonality();
+      
+      // Add click handlers for smooth scrolling to sections
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            window.scrollTo({
+              top: targetElement.offsetTop - 20,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+    });
+    
+    async function loadCurrentPersonality() {
+      try {
+        const response = await fetch('/api/user/personality');
+        const data = await response.json();
+        
+        console.log("Personality data:", data);
+        
+        if (data.success) {
+          if (data.has_personality && data.personality) {
+            updateCurrentPersonalityDisplay(data.personality);
+            selectPersonality(data.personality, true); // Highlight current
+          } else {
+            updateCurrentPersonalityDisplay(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading personality:', error);
+        updateCurrentPersonalityDisplay(null);
+      }
+    }
+    
+    function updateCurrentPersonalityDisplay(personality) {
+      const iconMap = {
+        'introvert': '📚',
+        'extrovert': '🎉',
+        'ambivert': '⚖️'
+      };
+      
+      const textMap = {
+        'introvert': 'Introvert',
+        'extrovert': 'Extrovert',
+        'ambivert': 'Ambivert'
+      };
+      
+      const descMap = {
+        'introvert': 'You recharge by being alone and prefer quiet environments',
+        'extrovert': 'You recharge by being with people and enjoy social activities',
+        'ambivert': 'You adapt to situations and enjoy both solitude and social time'
+      };
+      
+      const box = document.getElementById('currentPersonalityBox');
+      
+      if (personality) {
+        document.getElementById('currentPersonalityIcon').textContent = iconMap[personality];
+        document.getElementById('currentPersonalityText').textContent = textMap[personality];
+        document.getElementById('currentPersonalityDesc').textContent = descMap[personality];
+        box.classList.remove('border-dashed', 'border-slate-300');
+        box.classList.add('border-solid', 'border-blue-200', 'bg-gradient-to-r', 'from-blue-50', 'to-blue-100/50');
+      } else {
+        document.getElementById('currentPersonalityIcon').textContent = '🤔';
+        document.getElementById('currentPersonalityText').textContent = 'Not set yet';
+        document.getElementById('currentPersonalityDesc').textContent = 'Set your personality to get personalized recommendations';
+        box.classList.remove('border-solid', 'border-blue-200', 'bg-gradient-to-r', 'from-blue-50', 'to-blue-100/50');
+        box.classList.add('border-dashed', 'border-slate-300', 'bg-slate-50');
+      }
+    }
+    
+    function selectPersonality(type, isCurrent = false) {
+      selectedPersonality = type;
+      
+      // Remove selection dari semua options
+      document.querySelectorAll('.personality-option').forEach(option => {
+        option.classList.remove('selected', 'border-blue-500', 'border-green-500', 'border-purple-500');
+        option.classList.add('border-slate-200');
+      });
+      
+      // Add selection ke yang diklik
+      const colorMap = {
+        'introvert': 'border-blue-500',
+        'extrovert': 'border-green-500',
+        'ambivert': 'border-purple-500'
+      };
+      
+      // Find and highlight the selected option
+      document.querySelectorAll('.personality-option').forEach(option => {
+        if (option.onclick && option.onclick.toString().includes(`'${type}'`)) {
+          option.classList.add('selected', colorMap[type]);
+          option.classList.add('scale-[1.02]');
+        }
+      });
+      
+      // Enable save button jika bukan current
+      if (!isCurrent) {
+        const saveBtn = document.getElementById('savePersonalityBtn');
+        saveBtn.disabled = false;
+        saveBtn.classList.remove('disabled:opacity-50', 'disabled:cursor-not-allowed');
+      }
+    }
+    
+    async function letSystemGuess() {
+      try {
+        Swal.fire({
+          title: 'Analyzing Your Patterns',
+          text: 'Checking your activities and emotions...',
+          icon: 'info',
+          showConfirmButton: false,
+          allowOutsideClick: false,
+          backdrop: 'rgba(0,0,0,0.4)',
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+        
+        const response = await fetch('/api/user/infer-personality');
+        const data = await response.json();
+        
+        Swal.close();
+        
+        if (data.success) {
+          Swal.fire({
+            title: `We think you're a ${data.inferred_personality}!`,
+            html: `
+              <div class="text-left">
+                <p class="mb-3 text-slate-700">${data.suggestion}</p>
+                <p class="text-sm text-slate-600 mt-4">
+                  <i class="fas fa-chart-line mr-1"></i>
+                  Confidence: ${(data.confidence * 100).toFixed(0)}%
+                </p>
+              </div>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, that sounds right!',
+            cancelButtonText: 'No, let me choose',
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#64748b',
+            backdrop: 'rgba(0,0,0,0.4)',
+            customClass: {
+              popup: 'rounded-2xl'
+            }
+          }).then((result) => {
+            if (result.isConfirmed) {
+              selectPersonality(data.inferred_personality);
+              savePersonality();
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error guessing personality:', error);
+        Swal.fire({
+          title: 'Error',
+          text: 'Failed to analyze your activities',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#10b981',
+          backdrop: 'rgba(0,0,0,0.4)',
+          customClass: {
+            popup: 'rounded-2xl'
+          }
+        });
+      }
+    }
+    
+    async function savePersonality() {
+      if (!selectedPersonality) return;
+      
+      const btn = document.getElementById('savePersonalityBtn');
+      btn.disabled = true;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+      
+      try {
+        const response = await fetch('/api/user/set-personality', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ personality: selectedPersonality })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Update display
+          updateCurrentPersonalityDisplay(selectedPersonality);
+          
+          // Show success
+          Swal.fire({
+            title: 'Success!',
+            text: 'Personality saved successfully!',
+            icon: 'success',
+            confirmButtonText: 'Great!',
+            confirmButtonColor: '#10b981',
+            backdrop: 'rgba(0,0,0,0.4)',
+            customClass: {
+              popup: 'rounded-2xl'
+            }
+          }).then(() => {
+            // Redirect to dashboard
+            window.location.href = '/dashboard';
+          });
+          
+          // Highlight sebagai current
+          selectPersonality(selectedPersonality, true);
+        } else {
+          throw new Error(data.error || 'Failed to save');
+        }
+      } catch (error) {
+        console.error('Error saving personality:', error);
+        Swal.fire({
+          title: 'Error',
+          text: 'Failed to save personality. Please try again.',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#10b981',
+          backdrop: 'rgba(0,0,0,0.4)',
+          customClass: {
+            popup: 'rounded-2xl'
+          }
+        });
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+  </script>
+</body>
+</html>

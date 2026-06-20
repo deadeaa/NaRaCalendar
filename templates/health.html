@@ -1,0 +1,1812 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Health Insights - Scientific Wellness Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#10b981',
+            secondary: '#64748b',
+            accent: '#059669',
+            error: '#ef4444',
+            neutral: '#f8fafc',
+            dark: '#1e293b',
+            light: '#f1f5f9',
+            wellness: {
+              green: '#10b981',
+              purple: '#8b5cf6',
+              blue: '#3b82f6',
+              red: '#ef4444',
+              orange: '#f59e0b',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Arial', 'Helvetica', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-in',
+            'slide-in': 'slideIn 0.3s ease-out',
+            'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideIn: {
+              '0%': { transform: 'translateX(-20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            pulseSoft: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.7' },
+            },
+          },
+          boxShadow: {
+            'soft': '0 2px 15px rgba(0, 0, 0, 0.08)',
+            'medium': '0 4px 25px rgba(0, 0, 0, 0.12)',
+            'strong': '0 8px 40px rgba(0, 0, 0, 0.15)',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    .card-box {
+      transition: all 0.3s ease;
+    }
+    .card-box:hover {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    .btn {
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Modal scrollable fix */
+    .modal-content {
+      max-height: 70vh;
+      overflow-y: auto;
+      padding: 0 1.5rem;
+    }
+    
+    /* Custom slider styling */
+    .slider {
+      -webkit-appearance: none;
+      height: 8px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      outline: none;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Wellness score animation */
+    .wellness-progress-circle {
+      transition: stroke-dashoffset 1s ease-in-out;
+    }
+    
+    /* Daily health status indicator */
+    .checked-today {
+      position: relative;
+    }
+    
+    .checked-today::after {
+      content: "✓ Today";
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #10b981;
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* Fade in animation */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .fade-in-up {
+      animation: fadeIn 0.6s ease-out;
+    }
+    
+    /* Pulse animation for stress */
+    .stress-critical {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+    
+    .sleep-input {
+      transition: all 0.3s ease;
+    }
+    
+    .sleep-input:focus {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+    }
+    
+    .mood-indicator {
+      transition: all 0.3s ease;
+    }
+    
+    .mood-indicator:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 min-h-screen font-sans text-slate-900 antialiased p-4 md:p-6">
+  
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md rounded-2xl shadow-soft border border-slate-200/50 p-4 mb-6 flex justify-between items-center">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center text-white font-bold text-lg">
+        H
+      </div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-slate-900">Health Insights</h1>
+        <p class="text-sm text-secondary">Scientific Wellness Analysis</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-4">
+      <small id="clock" class="text-secondary text-sm font-medium"></small>
+      <div class="relative group">
+        <div class="user w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary hover:text-white transition-all duration-300 text-lg">
+          👤
+        </div>
+        <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-strong border border-slate-200/50 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+          <a href="/calendar" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-calendar mr-2"></i>Calendar
+          </a>
+          <a href="/dashboard" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-home mr-2"></i>Dashboard
+          </a>
+          <a href="/speak" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-microphone mr-2"></i>Voice Assistant
+          </a>
+          <div class="border-t border-slate-100 my-1"></div>
+          <a href="/logout" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area with Sidebar -->
+  <div class="main-content bg-white/95 backdrop-blur-xl rounded-3xl shadow-medium border border-slate-200/50 overflow-hidden flex min-h-[700px]">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar w-20 md:w-24 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center py-6 px-2 text-slate-200 shadow-inner">
+      <div class="brand font-bold text-xs tracking-wider text-slate-100 mb-6 uppercase">Menu</div>
+      <nav class="flex flex-col space-y-2 flex-1">
+        <a href="/dashboard" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Dashboard">
+          <span class="relative z-10">🏠</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <!-- <a href="/chat" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="AI Chat">
+          <span class="relative z-10">💬</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a> -->
+        <a href="/speak" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Voice Assistant">
+          <span class="relative z-10">🎙️</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/calendar" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Calendar">
+          <span class="relative z-10">📅</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/health" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white text-lg transition-all duration-300 bg-primary/20 border border-primary/30 hover:bg-primary/30 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Health Tracker">
+          <span class="relative z-10">❤️</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/emotion" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Face Emotion Scan">
+          <span class="relative z-10">😊</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+      </nav>
+      <div class="mt-auto">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm text-slate-300 mb-2 text-center leading-tight">
+          <span id="today-date-short">Loading...</span>
+        </div>
+        <a href="/profile" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Profile">
+          <span class="relative z-10">👤</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 md:p-8 overflow-auto scrollbar-thin">
+      
+      <!-- Header Section -->
+      <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Wellness Dashboard</h2>
+            <p class="text-secondary">Track your health metrics and get personalized recommendations</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div id="daily-status" class="text-sm bg-slate-100 text-slate-700 px-3 py-1 rounded-lg">
+              Not checked today
+            </div>
+            <button id="open-input-modal" class="btn bg-gradient-to-r from-primary to-accent text-white px-5 py-2.5 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-medium text-sm flex items-center gap-2">
+              <i class="fas fa-edit"></i>
+              Daily Check
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wellness Score & Metrics Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Wellness Score Card -->
+        <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 fade-in-up">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-slate-900 flex items-center">
+              <span class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mr-3">
+                <span class="text-primary text-sm">⭐</span>
+              </span>
+              Wellness Score
+            </h3>
+            <button id="refresh-analysis" class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors">
+              <i class="fas fa-sync-alt text-blue-600 text-sm"></i>
+            </button>
+          </div>
+          
+          <div class="text-center mb-4">
+            <div class="relative inline-block">
+              <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" stroke="#e2e8f0" stroke-width="8" fill="none"/>
+                <circle id="wellness-progress" cx="60" cy="60" r="54" stroke="url(#wellnessGradient)" 
+                        stroke-width="8" fill="none" stroke-linecap="round"
+                        stroke-dasharray="339.292" stroke-dashoffset="339.292"/>
+                <defs>
+                  <linearGradient id="wellnessGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#10b981" />
+                    <stop offset="100%" stop-color="#059669" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="text-center">
+                  <div id="wellness-score" class="text-3xl font-bold gradient-text">-</div>
+                  <div class="text-xs text-secondary">/10</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="text-center">
+            <div id="wellness-status" class="text-sm text-secondary mb-2">Input daily health data</div>
+            <div class="flex justify-center gap-1">
+              <div class="w-2 h-2 bg-slate-300 rounded-full"></div>
+              <div class="w-2 h-2 bg-slate-300 rounded-full"></div>
+              <div class="w-2 h-2 bg-slate-300 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scientific Health Metrics -->
+        <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 fade-in-up" style="animation-delay: 0.1s">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-slate-900 flex items-center">
+              <span class="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center mr-3">
+                <span class="text-accent text-sm">📊</span>
+              </span>
+              Health Metrics
+            </h3>
+            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <i class="fas fa-heartbeat text-green-600 text-sm"></i>
+            </div>
+          </div>
+          
+          <div class="space-y-4">
+            <!-- Sleep Science -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-slate-700 flex items-center gap-2">
+                  <i class="fas fa-moon text-purple-500 text-sm"></i>
+                  Sleep Score
+                </span>
+                <span id="sleep-score" class="text-sm font-semibold text-slate-500">-</span>
+              </div>
+              <div class="bg-slate-100 rounded-full h-2">
+                <div id="sleep-score-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <div class="flex justify-between text-xs text-secondary mt-1">
+                <span id="sleep-duration">- hrs</span>
+                <span id="sleep-quality-text">- quality</span>
+              </div>
+            </div>
+            
+            <!-- Stress Science -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-slate-700 flex items-center gap-2">
+                  <i class="fas fa-brain text-blue-500 text-sm"></i>
+                  Stress Level
+                </span>
+                <span id="stress-level" class="text-sm font-semibold text-slate-500">-</span>
+              </div>
+              <div class="bg-slate-100 rounded-full h-2">
+                <div id="stress-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <div class="flex justify-between text-xs text-secondary mt-1">
+                <span id="stress-symptoms">0 symptoms</span>
+                <span id="stress-category">-</span>
+              </div>
+            </div>
+            
+            <!-- Recovery Need -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-slate-700 flex items-center gap-2">
+                  <i class="fas fa-battery-half text-orange-500 text-sm"></i>
+                  Recovery Need
+                </span>
+                <span id="recovery-need" class="text-sm font-semibold text-slate-500">-</span>
+              </div>
+              <div class="bg-slate-100 rounded-full h-2">
+                <div id="recovery-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <div class="text-xs text-secondary mt-1" id="recovery-message">
+                Based on sleep, stress, and workload
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workload Analysis -->
+        <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 fade-in-up" style="animation-delay: 0.2s">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-slate-900 flex items-center">
+              <span class="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center mr-3">
+                <span class="text-purple-500 text-sm">📈</span>
+              </span>
+              Workload Analysis
+            </h3>
+            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+              <i class="fas fa-chart-bar text-purple-600 text-sm"></i>
+            </div>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-calendar-day text-blue-600 text-sm"></i>
+                </div>
+                <div>
+                  <div class="text-sm text-secondary">Total Events</div>
+                  <div id="health-total-events" class="text-lg font-semibold text-slate-900">0</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-clock text-red-600 text-sm"></i>
+                </div>
+                <div>
+                  <div class="text-sm text-secondary">Work Hours</div>
+                  <div id="health-work-hours" class="text-lg font-semibold text-slate-900">0h</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-fire text-orange-600 text-sm"></i>
+                </div>
+                <div>
+                  <div class="text-sm text-secondary">Burnout Risk</div>
+                  <div id="health-burnout-risk" class="text-lg font-semibold text-slate-900">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Recommendations Section -->
+      <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50 mb-6 fade-in-up" style="animation-delay: 0.3s">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-slate-900 flex items-center gap-2">
+            <i class="fas fa-robot text-indigo-500"></i>
+            Scientific Health Recommendations
+          </h3>
+          <button id="open-input-btn" class="btn bg-gradient-to-r from-primary to-accent text-white px-5 py-2.5 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-medium text-sm flex items-center gap-2">
+            <i class="fas fa-edit"></i>
+            Daily Health Check
+          </button>
+        </div>
+        
+        <div id="recommendations-container" class="space-y-4">
+          <div class="text-center py-8">
+            <div class="text-slate-400 mb-2">
+              <i class="fas fa-clipboard-list text-4xl"></i>
+            </div>
+            <div class="text-secondary">Input your daily sleep and stress data to get personalized recommendations</div>
+            <button id="open-input-modal2" class="mt-4 btn bg-gradient-to-r from-primary to-accent text-white px-6 py-3 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-medium text-sm">
+              <i class="fas fa-edit mr-2"></i>
+              Start Daily Check
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-4 justify-center">
+        <!-- Sleep Plan Button -->
+        <button id="sleep-plan" class="group relative overflow-hidden bg-gradient-to-br from-purple-100 to-indigo-100 text-purple-700 hover:text-white border border-purple-200 rounded-2xl px-6 py-3.5 font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-200/50 active:scale-[0.98]">
+            <div class="flex items-center gap-3 relative z-10">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                <i class="fas fa-moon text-sm"></i>
+            </div>
+            <span>Sleep Plan</span>
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-500 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <div class="absolute -inset-1 bg-gradient-to-r from-purple-300 to-indigo-300 rounded-2xl opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-300 -z-10"></div>
+        </button>
+
+        <!-- Stress Management Button -->
+        <button id="stress-management" class="group relative overflow-hidden bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-700 hover:text-white border border-blue-200 rounded-2xl px-6 py-3.5 font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-200/50 active:scale-[0.98]">
+            <div class="flex items-center gap-3 relative z-10">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white transform transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                <i class="fas fa-brain text-sm"></i>
+            </div>
+            <span>Stress Management</span>
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <div class="absolute -inset-1 bg-gradient-to-r from-blue-300 to-cyan-300 rounded-2xl opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-300 -z-10"></div>
+        </button>
+
+        <!-- Emergency Protocol Button -->
+        <button id="emergency-break" class="group relative overflow-hidden bg-gradient-to-br from-red-100 to-orange-100 text-red-700 hover:text-white border border-red-200 rounded-2xl px-6 py-3.5 font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-red-200/50 active:scale-[0.98]">
+            <div class="flex items-center gap-3 relative z-10">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-180">
+                <i class="fas fa-first-aid text-sm"></i>
+            </div>
+            <span>Emergency Protocol</span>
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-br from-red-500 to-orange-500 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <div class="absolute -inset-1 bg-gradient-to-r from-red-300 to-orange-300 rounded-2xl opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-300 -z-10"></div>
+        </button>
+        </div>
+    </main>
+  </div>
+
+  <!-- Sleep & Stress Input Modal -->
+  <div id="input-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <!-- Header Sticky -->
+      <div class="flex justify-between items-center p-6 border-b border-slate-200 sticky top-0 bg-white z-10">
+        <div>
+          <h3 class="text-xl font-semibold text-slate-800">Daily Health Check</h3>
+          <p class="text-slate-500 text-sm" id="today-modal-date">Today: Loading...</p>
+        </div>
+        <button id="close-modal" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <!-- Scrollable Content -->
+      <div class="modal-content flex-1">
+        <!-- Sleep Input Section -->
+        <div class="py-6">
+          <h4 class="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+            <i class="fas fa-moon text-purple-500"></i>
+            Sleep Quality Assessment
+          </h4>
+          
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-3">
+                🛌 Sleep Duration (hours)
+              </label>
+              <div class="flex items-center gap-3">
+                <input type="number" id="sleep-hours" min="0" max="12" step="0.5" 
+                       class="sleep-input w-24 px-4 py-3 border border-slate-300 rounded-lg text-center font-semibold text-lg"
+                       placeholder="7.5">
+                <span class="text-slate-500 text-sm">hours</span>
+              </div>
+              <div class="text-xs text-slate-500 mt-2 pl-1">
+                💡 Recommended: 7-9 hours for adults
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-3">
+                ⏰ Sleep Schedule
+              </label>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="text-sm text-slate-500 mb-2">Bed Time</div>
+                  <input type="time" id="bed-time" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-center" value="22:30">
+                </div>
+                <div>
+                  <div class="text-sm text-slate-500 mb-2">Wake Up Time</div>
+                  <input type="time" id="wake-time" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-center" value="06:30">
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-3">
+                😴 Sleep Quality
+              </label>
+              <div class="flex justify-between text-2xl mb-3 px-4">
+                <button class="sleep-quality opacity-30 transition-all duration-200" data-quality="1" title="Very Poor">😫</button>
+                <button class="sleep-quality opacity-30 transition-all duration-200" data-quality="2" title="Poor">😔</button>
+                <button class="sleep-quality opacity-30 transition-all duration-200" data-quality="3" title="Fair">😐</button>
+                <button class="sleep-quality opacity-30 transition-all duration-200" data-quality="4" title="Good">😊</button>
+                <button class="sleep-quality opacity-30 transition-all duration-200" data-quality="5" title="Excellent">😄</button>
+              </div>
+              <div class="flex justify-between text-xs text-slate-500 px-2">
+                <span>Very Poor</span>
+                <span>Excellent</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Stress Input Section -->
+        <div class="py-6 border-t border-slate-100">
+          <h4 class="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+            <i class="fas fa-brain text-blue-500"></i>
+            Stress Level Assessment
+          </h4>
+          
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-3">
+                🧠 Physical Symptoms
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200">
+                  <input type="checkbox" class="stress-symptom rounded text-blue-500 focus:ring-blue-500" value="headache">
+                  <span class="text-sm">Headache / Migraine</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200">
+                  <input type="checkbox" class="stress-symptom rounded text-blue-500 focus:ring-blue-500" value="muscle_tension">
+                  <span class="text-sm">Muscle Tension</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200">
+                  <input type="checkbox" class="stress-symptom rounded text-blue-500 focus:ring-blue-500" value="fatigue">
+                  <span class="text-sm">Fatigue / Low Energy</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200">
+                  <input type="checkbox" class="stress-symptom rounded text-blue-500 focus:ring-blue-500" value="sleep_issues">
+                  <span class="text-sm">Sleep Problems</span>
+                </label>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-3">
+                💭 Emotional State
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200">
+                  <input type="checkbox" class="stress-symptom rounded text-blue-500 focus:ring-blue-500" value="anxiety">
+                  <span class="text-sm">Anxiety / Worry</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200">
+                  <input type="checkbox" class="stress-symptom rounded text-blue-500 focus:ring-blue-500" value="irritability">
+                  <span class="text-sm">Irritability</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200">
+                  <input type="checkbox" class="stress-symptom rounded text-blue-500 focus:ring-blue-500" value="overwhelm">
+                  <span class="text-sm">Feeling Overwhelmed</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200">
+                  <input type="checkbox" class="stress-symptom rounded text-blue-500 focus:ring-blue-500" value="concentration">
+                  <span class="text-sm">Poor Concentration</span>
+                </label>
+              </div>
+            </div>
+            
+            <!-- Stress Scale -->
+            <div class="bg-slate-50 rounded-xl p-4">
+              <label class="block text-sm font-medium text-slate-700 mb-4">
+                📊 Perceived Stress Scale (1-10)
+              </label>
+              
+              <div class="space-y-4">
+                <input type="range" id="stress-scale" min="1" max="10" value="5" 
+                       class="slider w-full h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 rounded-lg appearance-none cursor-pointer">
+                
+                <div class="flex justify-between text-xs text-slate-600 font-medium">
+                  <span class="text-green-600">Low Stress</span>
+                  <span class="text-red-600">High Stress</span>
+                </div>
+                
+                <div class="text-center">
+                  <div id="stress-value-display" class="text-lg font-bold text-blue-600 bg-white py-2 rounded-lg border border-slate-200">
+                    5/10 - Moderate Stress
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Footer Sticky -->
+      <div class="flex justify-end gap-3 p-6 border-t border-slate-200 sticky bottom-0 bg-white z-10">
+        <button id="cancel-input" class="btn secondary bg-white text-primary border border-slate-200 px-6 py-3 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm">
+          Cancel
+        </button>
+        <button id="save-health-data" class="btn bg-gradient-to-r from-primary to-accent text-white px-8 py-3 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-semibold flex items-center gap-3">
+          <i class="fas fa-chart-line"></i>
+          Save & Analyze
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scientific Health Insights JavaScript -->
+  <script>
+    class ScientificHealthInsights {
+      constructor() {
+        this.healthData = {};
+        this.calendarData = [];
+        this.today = this.getCurrentDateString();
+        this.lastCheckedDate = null;
+        this.autoRefreshInterval = null;
+        this.init();
+      }
+
+      async init() {
+        this.loadStoredData();
+        this.checkForNewDay();
+        await this.loadCalendarData();
+        this.setupEventListeners();
+        this.updateDisplay();
+        this.updateDateDisplay();
+        
+        // Auto-perform analysis jika ada data health untuk hari ini
+        if (this.healthData[this.today]) {
+          setTimeout(() => this.performAnalysis(), 2000);
+        }
+      }
+
+      async syncAllStats() {
+        console.log('🔄 Syncing all statistics...');
+        
+        try {
+          // 1. Update workload stats dari database
+          await this.updateWorkloadStats();
+          
+          // 2. Update calendar counters jika calendar ada
+          if (window.calendar && typeof window.calendar.loadEventsFromDatabase === 'function') {
+            await window.calendar.loadEventsFromDatabase();
+            window.calendar.updateEventCounters();
+          }
+          
+          // 3. Update Nara stats jika nara ada
+          if (window.nara && typeof window.nara.loadRecentEvents === 'function') {
+            await window.nara.loadRecentEvents();
+            window.nara.updateStats();
+          }
+          
+          // 4. Update display
+          this.updateDisplay();
+          this.updateDateDisplay();
+          
+          console.log('✅ All statistics synced');
+          
+        } catch (error) {
+          console.error('Error syncing stats:', error);
+        }
+      }
+
+      getCurrentDateString() {
+        const now = new Date();
+        return now.toISOString().split('T')[0]; // Format YYYY-MM-DD
+      }
+
+      checkForNewDay() {
+        const lastChecked = localStorage.getItem('lastCheckedDate');
+        
+        // Reset form input setiap hari baru
+        if (lastChecked !== this.today) {
+          console.log("🔔 New day detected! Resetting health check form.");
+          localStorage.setItem('lastCheckedDate', this.today);
+          
+          // Reset modal form untuk hari baru
+          this.resetModalForm();
+          
+          // Clear pengaturan Sleep Quality kembali ke default
+          this.setSleepQuality(3);
+        }
+      }
+
+      resetModalForm() {
+        // Reset semua input form ke nilai default
+        document.getElementById('sleep-hours').value = '';
+        document.getElementById('bed-time').value = '22:30';
+        document.getElementById('wake-time').value = '06:30';
+        this.setSleepQuality(3);
+        document.getElementById('stress-scale').value = 5;
+        this.updateStressDisplay(5);
+        this.updateSliderGradient(5);
+        
+        // Reset semua checkbox stress symptoms
+        document.querySelectorAll('.stress-symptom').forEach(checkbox => {
+          checkbox.checked = false;
+        });
+      }
+
+      loadStoredData() {
+        const stored = localStorage.getItem('scientificHealthData');
+        if (stored) {
+          this.healthData = JSON.parse(stored);
+        }
+        
+        // Load last checked date
+        this.lastCheckedDate = localStorage.getItem('lastCheckedDate');
+      }
+
+      saveStoredData() {
+        localStorage.setItem('scientificHealthData', JSON.stringify(this.healthData));
+      }
+
+      async loadCalendarData() {
+        try {
+          console.log('🔄 Loading calendar data from database...');
+          
+          // Simulasi mengambil data dari database
+          const today = new Date();
+          const mockEvents = [
+            {
+              id: 1,
+              summary: "Morning Meeting",
+              start: { dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0).toISOString() },
+              end: { dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0).toISOString() }
+            },
+            {
+              id: 2,
+              summary: "Project Work",
+              start: { dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 30).toISOString() },
+              end: { dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 30).toISOString() }
+            },
+            {
+              id: 3,
+              summary: "Lunch Break",
+              start: { dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 30).toISOString() },
+              end: { dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 13, 30).toISOString() }
+            },
+            {
+              id: 4,
+              summary: "Client Call",
+              start: { dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 0).toISOString() },
+              end: { dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 15, 0).toISOString() }
+            }
+          ];
+          
+          this.calendarData = mockEvents;
+          console.log(`✅ Loaded ${this.calendarData.length} events`);
+          
+        } catch (error) {
+          console.error('❌ Error loading calendar data:', error);
+          this.calendarData = [];
+        }
+      }
+
+      setupEventListeners() {
+        document.getElementById('open-input-modal').addEventListener('click', () => this.showInputModal());
+        document.getElementById('open-input-btn').addEventListener('click', () => this.showInputModal());
+        document.getElementById('open-input-modal2').addEventListener('click', () => this.showInputModal());
+        document.getElementById('close-modal').addEventListener('click', () => this.hideInputModal());
+        document.getElementById('cancel-input').addEventListener('click', () => this.hideInputModal());
+        document.getElementById('save-health-data').addEventListener('click', () => this.saveHealthData());
+
+        document.querySelectorAll('.sleep-quality').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const quality = parseInt(e.target.closest('button').dataset.quality);
+            this.setSleepQuality(quality);
+          });
+        });
+
+        const stressSlider = document.getElementById('stress-scale');
+        stressSlider.addEventListener('input', (e) => {
+          const value = parseInt(e.target.value);
+          this.updateStressDisplay(value);
+          this.updateSliderGradient(value);
+        });
+
+        this.updateSliderGradient(5);
+
+        document.getElementById('refresh-analysis').addEventListener('click', () => this.performAnalysis());
+        document.getElementById('emergency-break').addEventListener('click', () => this.suggestEmergencyBreak());
+        document.getElementById('sleep-plan').addEventListener('click', () => this.generateSleepPlan());
+        document.getElementById('stress-management').addEventListener('click', () => this.generateStressPlan());
+
+        document.getElementById('input-modal').addEventListener('click', (e) => {
+          if (e.target.id === 'input-modal') {
+            this.hideInputModal();
+          }
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !document.getElementById('input-modal').classList.contains('hidden')) {
+            this.hideInputModal();
+          }
+        });
+      }
+
+      updateSliderGradient(value) {
+        const slider = document.getElementById('stress-scale');
+        const percentage = ((value - 1) / 9) * 100;
+        
+        let gradient;
+        if (value <= 3) {
+          gradient = `linear-gradient(to right, #10b981 0%, #10b981 ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
+        } else if (value <= 6) {
+          gradient = `linear-gradient(to right, #10b981 0%, #f59e0b 33%, #f59e0b ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
+        } else {
+          gradient = `linear-gradient(to right, #10b981 0%, #f59e0b 33%, #ef4444 66%, #ef4444 ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
+        }
+        
+        slider.style.background = gradient;
+      }
+
+      updateDateDisplay() {
+        const now = new Date();
+        const options = { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        };
+        const formattedDate = now.toLocaleDateString('en-US', options);
+        
+        document.getElementById('today-date-short').textContent = now.getDate() + ' ' + now.toLocaleDateString('en-US', { month: 'short' });
+        document.getElementById('today-modal-date').textContent = `Today: ${formattedDate}`;
+        
+        // Update daily status
+        const dailyStatus = document.getElementById('daily-status');
+        if (this.healthData[this.today]) {
+          dailyStatus.textContent = "✓ Checked today";
+          dailyStatus.className = "text-sm bg-green-100 text-green-700 px-3 py-1 rounded-lg";
+        } else {
+          dailyStatus.textContent = "Not checked today";
+          dailyStatus.className = "text-sm bg-slate-100 text-slate-700 px-3 py-1 rounded-lg";
+        }
+      }
+
+      showInputModal() {
+        document.getElementById('input-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Reset form untuk hari baru atau jika belum ada input hari ini
+        if (!this.healthData[this.today]) {
+          this.resetModalForm();
+        } else {
+          // Load data existing untuk hari ini
+          const todayData = this.healthData[this.today];
+          if (todayData.sleep) {
+            document.getElementById('sleep-hours').value = todayData.sleep.duration || '';
+            document.getElementById('bed-time').value = todayData.sleep.bedTime || '22:30';
+            document.getElementById('wake-time').value = todayData.sleep.wakeTime || '06:30';
+            this.setSleepQuality(todayData.sleep.quality || 3);
+          }
+          
+          if (todayData.stress) {
+            document.getElementById('stress-scale').value = todayData.stress.scale || 5;
+            this.updateStressDisplay(todayData.stress.scale || 5);
+            this.updateSliderGradient(todayData.stress.scale || 5);
+            
+            // Set stress symptoms
+            document.querySelectorAll('.stress-symptom').forEach(checkbox => {
+              checkbox.checked = (todayData.stress.symptoms || []).includes(checkbox.value);
+            });
+          }
+        }
+      }
+
+      hideInputModal() {
+        document.getElementById('input-modal').classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+
+      setSleepQuality(quality) {
+        document.querySelectorAll('.sleep-quality').forEach((btn, index) => {
+          const btnQuality = index + 1;
+          if (btnQuality === quality) {
+            btn.style.opacity = '1';
+            btn.style.transform = 'scale(1.2)';
+          } else {
+            btn.style.opacity = '0.3';
+            btn.style.transform = 'scale(1)';
+          }
+        });
+      }
+
+      updateStressDisplay(value) {
+        let category = 'Low Stress';
+        let color = '#10b981';
+        
+        if (value >= 8) {
+          category = 'Severe Stress';
+          color = '#ef4444';
+        } else if (value >= 6) {
+          category = 'High Stress';
+          color = '#f59e0b';
+        } else if (value >= 4) {
+          category = 'Moderate Stress';
+          color = '#3b82f6';
+        }
+        
+        document.getElementById('stress-value-display').textContent = `${value}/10 - ${category}`;
+        document.getElementById('stress-value-display').style.color = color;
+      }
+
+      saveHealthData() {
+        const sleepHours = parseFloat(document.getElementById('sleep-hours').value);
+        const bedTime = document.getElementById('bed-time').value;
+        const wakeTime = document.getElementById('wake-time').value;
+        
+        let sleepQuality = 3;
+        document.querySelectorAll('.sleep-quality').forEach((btn, index) => {
+          if (btn.style.opacity === '1') {
+            sleepQuality = index + 1;
+          }
+        });
+
+        const stressScale = parseInt(document.getElementById('stress-scale').value);
+        const stressSymptoms = Array.from(document.querySelectorAll('.stress-symptom:checked'))
+                                    .map(cb => cb.value);
+
+        if (!sleepHours || sleepHours < 0 || sleepHours > 12) {
+          this.showNotification('Please enter valid sleep duration (0-12 hours)', 'error');
+          return;
+        }
+
+        const sleepScore = this.calculateSleepScore(sleepHours, sleepQuality, bedTime, wakeTime);
+        const stressLevel = this.calculateStressLevel(stressScale, stressSymptoms);
+
+        // Save data specifically for today's date
+        this.healthData[this.today] = {
+          sleep: {
+            duration: sleepHours,
+            bedTime: bedTime,
+            wakeTime: wakeTime,
+            quality: sleepQuality,
+            score: sleepScore
+          },
+          stress: {
+            scale: stressScale,
+            symptoms: stressSymptoms,
+            category: this.getStressCategory(stressLevel),
+            level: stressLevel
+          },
+          lastUpdated: new Date().toISOString()
+        };
+
+        this.saveStoredData();
+        this.hideInputModal();
+        this.updateDateDisplay();
+        this.performAnalysis();
+        
+        this.showNotification('Daily health data saved successfully! Analysis updated.', 'success');
+      }
+
+      calculateSleepScore(duration, quality, bedTime, wakeTime) {
+        let score = 5;
+        
+        if (duration >= 7 && duration <= 9) score += 3;
+        else if (duration >= 6 && duration < 7) score += 1;
+        else if (duration > 9 && duration <= 10) score += 1;
+        else if (duration < 6) score -= 2;
+        else if (duration > 10) score -= 1;
+        
+        score += (quality - 3);
+        
+        if (bedTime && wakeTime) {
+          const bed = new Date(`2000-01-01T${bedTime}`);
+          const wake = new Date(`2000-01-01T${wakeTime}`);
+          
+          const idealBedStart = new Date('2000-01-01T22:00');
+          const idealBedEnd = new Date('2000-01-01T23:30');
+          const idealWakeStart = new Date('2000-01-01T06:00');
+          const idealWakeEnd = new Date('2000-01-01T08:00');
+          
+          if (bed >= idealBedStart && bed <= idealBedEnd) score += 1;
+          if (wake >= idealWakeStart && wake <= idealWakeEnd) score += 1;
+        }
+        
+        return Math.max(1, Math.min(10, Math.round(score)));
+      }
+
+      calculateStressLevel(scale, symptoms) {
+        let level = scale;
+        level += symptoms.length * 0.5;
+        
+        const criticalSymptoms = ['anxiety', 'overwhelm', 'sleep_issues'];
+        const criticalCount = symptoms.filter(s => criticalSymptoms.includes(s)).length;
+        level += criticalCount * 0.5;
+        
+        return Math.min(10, level);
+      }
+
+      getStressCategory(level) {
+        if (level >= 8) return 'severe';
+        if (level >= 6) return 'high';
+        if (level >= 4) return 'moderate';
+        return 'low';
+      }
+
+      updateDisplay() {
+        const todayData = this.healthData[this.today];
+        
+        if (todayData && todayData.sleep) {
+          document.getElementById('sleep-score').textContent = `${todayData.sleep.score}/10`;
+          document.getElementById('sleep-score-bar').style.width = `${todayData.sleep.score * 10}%`;
+          document.getElementById('sleep-duration').textContent = `${todayData.sleep.duration} hrs`;
+          document.getElementById('sleep-quality-text').textContent = this.getSleepQualityText(todayData.sleep.quality);
+          
+          const sleepBar = document.getElementById('sleep-score-bar');
+          if (todayData.sleep.score >= 8) sleepBar.style.backgroundColor = '#10b981';
+          else if (todayData.sleep.score >= 6) sleepBar.style.backgroundColor = '#f59e0b';
+          else sleepBar.style.backgroundColor = '#ef4444';
+        } else {
+          document.getElementById('sleep-score').textContent = '-';
+          document.getElementById('sleep-score-bar').style.width = '0%';
+          document.getElementById('sleep-duration').textContent = '- hrs';
+          document.getElementById('sleep-quality-text').textContent = '-';
+        }
+
+        if (todayData && todayData.stress) {
+          document.getElementById('stress-level').textContent = `${todayData.stress.level.toFixed(1)}/10`;
+          document.getElementById('stress-bar').style.width = `${todayData.stress.level * 10}%`;
+          document.getElementById('stress-symptoms').textContent = `${todayData.stress.symptoms.length} symptoms`;
+          document.getElementById('stress-category').textContent = todayData.stress.category;
+          
+          const stressBar = document.getElementById('stress-bar');
+          if (todayData.stress.level >= 8) {
+            stressBar.style.backgroundColor = '#ef4444';
+            stressBar.classList.add('stress-critical');
+          } else if (todayData.stress.level >= 6) {
+            stressBar.style.backgroundColor = '#f59e0b';
+            stressBar.classList.remove('stress-critical');
+          } else {
+            stressBar.style.backgroundColor = '#10b981';
+            stressBar.classList.remove('stress-critical');
+          }
+        } else {
+          document.getElementById('stress-level').textContent = '-';
+          document.getElementById('stress-bar').style.width = '0%';
+          document.getElementById('stress-symptoms').textContent = '0 symptoms';
+          document.getElementById('stress-category').textContent = '-';
+        }
+
+        this.updateWorkloadStats();
+      }
+
+      getSleepQualityText(quality) {
+        const texts = ['Very Poor', 'Poor', 'Fair', 'Good', 'Excellent'];
+        return texts[quality - 1] || 'Unknown';
+      }
+
+      async updateWorkloadStats() {
+        try {
+          console.log('🔄 [HEALTH] SIMPLE UPDATE START');
+          
+          // OPTION 1: Get from calendar directly
+          let todayEventsCount = 0;
+          let totalWorkHours = 0;
+          
+          if (window.calendar && window.calendar.mockEvents) {
+            console.log('[HEALTH] Using window.calendar.mockEvents');
+            
+            const today = new Date();
+            const todayEvents = window.calendar.mockEvents.filter(event => {
+              try {
+                if (!event.start || !event.start.dateTime) return false;
+                const eventDate = new Date(event.start.dateTime);
+                return eventDate.toDateString() === today.toDateString();
+              } catch (error) {
+                return false;
+              }
+            });
+            
+            todayEventsCount = todayEvents.length;
+            
+            // Calculate hours
+            todayEvents.forEach(event => {
+              if (event.start && event.start.dateTime && event.end && event.end.dateTime) {
+                const start = new Date(event.start.dateTime);
+                const end = new Date(event.end.dateTime);
+                const hours = (end - start) / (1000 * 60 * 60);
+                totalWorkHours += hours;
+              }
+            });
+            
+            console.log('[HEALTH] From calendar:', {
+              events: todayEventsCount,
+              hours: totalWorkHours
+            });
+          }
+          
+          // OPTION 2: If calendar not available, use local storage
+          if (todayEventsCount === 0) {
+            console.log('[HEALTH] Calendar not available, checking localStorage');
+            const saved = localStorage.getItem('calendar-today-events');
+            if (saved) {
+              const data = JSON.parse(saved);
+              todayEventsCount = data.count || 0;
+              totalWorkHours = data.hours || 0;
+              console.log('[HEALTH] From localStorage:', { events: todayEventsCount, hours: totalWorkHours });
+            }
+          }
+          
+          // OPTION 3: Get from database or API
+          if (todayEventsCount === 0) {
+            try {
+              const response = await fetch('/api/today-schedule', {
+                method: 'GET',
+                credentials: 'include'
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.schedule) {
+                  todayEventsCount = data.schedule.length;
+                  console.log('[HEALTH] From API:', { events: todayEventsCount });
+                }
+              }
+            } catch (apiError) {
+              console.log('[HEALTH] API call failed:', apiError);
+            }
+          }
+          
+          // Update UI
+          const totalEventsElement = document.getElementById('health-total-events');
+          const workHoursElement = document.getElementById('health-work-hours');
+          
+          if (totalEventsElement) {
+            totalEventsElement.textContent = todayEventsCount;
+          } else {
+            console.error('[HEALTH] Element health-total-events not found');
+          }
+          
+          if (workHoursElement) {
+            workHoursElement.textContent = `${totalWorkHours.toFixed(1)}h`;
+          } else {
+            console.error('[HEALTH] Element health-work-hours not found');
+          }
+          
+          console.log('[HEALTH] UI Updated:', {
+            'total-events': todayEventsCount,
+            'work-hours': totalWorkHours
+          });
+          
+          // Update burnout risk
+          const todayData = this.healthData[this.today];
+          const burnoutRisk = this.calculateBurnoutRisk(totalWorkHours, todayEventsCount, todayData);
+          const burnoutElement = document.getElementById('health-burnout-risk');
+          
+          if (burnoutElement) {
+            burnoutElement.textContent = burnoutRisk.level;
+            burnoutElement.className = `text-lg font-semibold ${burnoutRisk.color}`;
+            console.log('[HEALTH] Burnout risk updated:', burnoutRisk);
+          } else {
+            console.error('[HEALTH] Element health-burnout-risk not found.');
+          }
+          
+        } catch (error) {
+          console.error('[HEALTH] Error in updateWorkloadStats:', error);
+          
+          // Set default values
+          const totalEventsElement = document.getElementById('health-total-events');
+          const workHoursElement = document.getElementById('health-work-hours');
+          const burnoutElement = document.getElementById('health-burnout-risk');
+          
+          if (totalEventsElement) totalEventsElement.textContent = '0';
+          if (workHoursElement) workHoursElement.textContent = '0h';
+          if (burnoutElement) {
+            burnoutElement.textContent = 'Low';
+            burnoutElement.className = 'text-lg font-semibold text-green-600';
+          }
+        }
+      }
+
+      calculateBurnoutRisk(workHours, events, todayData) {
+        let riskScore = 0;
+        
+        console.log('[HEALTH] Calculating burnout risk:', { workHours, events, todayData });
+        
+        if (workHours > 10) riskScore += 3;
+        else if (workHours > 8) riskScore += 2;
+        else if (workHours > 6) riskScore += 1;
+        
+        // Karena events adalah number, kita perlu periksa untuk event larut malam
+        // Ini adalah simulasi sederhana
+        if (workHours > 8 && todayData) {
+          const hasEveningWork = workHours > 8;
+          if (hasEveningWork) riskScore += 2;
+          
+          const hasLateNightWork = false; // Simulasi
+          if (hasLateNightWork) riskScore += 3;
+        }
+        
+        if (events > 6) riskScore += 2; // Jika banyak event
+        else if (events > 3) riskScore += 1;
+        
+        const breaksTaken = 0; // Simulasi - asumsikan tidak ada break
+        if (breaksTaken === 0 && events >= 3) riskScore += 2;
+        
+        if (todayData && todayData.stress && todayData.stress.level >= 7) riskScore += 2;
+        if (todayData && todayData.sleep && todayData.sleep.score <= 5) riskScore += 1;
+        
+        console.log('[HEALTH] Burnout risk score:', riskScore);
+        
+        if (riskScore >= 6) return { level: 'High', color: 'text-red-600' };
+        if (riskScore >= 4) return { level: 'Medium', color: 'text-amber-600' };
+        return { level: 'Low', color: 'text-green-600' };
+      }
+
+      async performAnalysis() {
+        this.updateDisplay();
+        
+        if (!this.healthData[this.today]) {
+          this.showNotification('Please complete your daily health check first', 'info');
+          return;
+        }
+
+        this.showLoadingState();
+        
+        try {
+          await this.loadCalendarData();
+          
+          const recommendations = await this.generateRecommendations();
+          const wellnessScore = this.calculateWellnessScore();
+          
+          this.updateWellnessScore(wellnessScore);
+          this.displayRecommendations(recommendations);
+          this.updateRecoveryNeed();
+          
+          this.hideLoadingState();
+          this.showNotification('Analysis refreshed successfully!', 'success');
+          
+        } catch (error) {
+          console.error('Error during analysis:', error);
+          this.hideLoadingState();
+          this.showNotification('Analysis completed with some issues', 'info');
+        }
+      }
+
+      calculateWellnessScore() {
+        const todayData = this.healthData[this.today];
+        if (!todayData) return 5;
+        
+        let score = 6;
+        const sleepContribution = (todayData.sleep.score / 10) * 4;
+        const stressContribution = ((10 - todayData.stress.level) / 10) * 3;
+        const workloadScore = this.calculateWorkloadScore();
+        const workloadContribution = (workloadScore / 10) * 3;
+        
+        score = sleepContribution + stressContribution + workloadContribution;
+        
+        return Math.max(1, Math.min(10, Math.round(score * 10) / 10));
+      }
+
+      calculateWorkloadScore() {
+        const today = new Date();
+        const todayEvents = this.calendarData.filter(event => {
+          const eventDate = new Date(event.start.dateTime);
+          return eventDate.toDateString() === today.toDateString();
+        });
+
+        let score = 7;
+        
+        if (todayEvents.length > 8) score -= 3;
+        else if (todayEvents.length > 5) score -= 2;
+        else if (todayEvents.length > 3) score -= 1;
+        
+        const longestBlock = this.calculateLongestWorkBlock(todayEvents);
+        if (longestBlock >= 6) score -= 3;
+        else if (longestBlock >= 4) score -= 2;
+        else if (longestBlock >= 3) score -= 1;
+        
+        const breaksTaken = todayEvents.filter(event => 
+          event.summary?.toLowerCase().includes('break') ||
+          event.summary?.toLowerCase().includes('lunch')
+        ).length;
+        if (breaksTaken >= 2) score += 1;
+        
+        return Math.max(1, Math.min(10, score));
+      }
+
+      calculateLongestWorkBlock(events) {
+        if (!events || events.length === 0) return 0;
+        
+        const workBlocks = [];
+        let currentBlock = { start: null, end: null };
+        
+        const validEvents = events
+          .filter(event => {
+            try {
+              return event.start && event.start.dateTime && 
+                      event.end && event.end.dateTime &&
+                      !isNaN(new Date(event.start.dateTime).getTime()) &&
+                      !isNaN(new Date(event.end.dateTime).getTime());
+            } catch (error) {
+              return false;
+            }
+          })
+          .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));
+        
+        validEvents.forEach(event => {
+          try {
+            const start = new Date(event.start.dateTime);
+            const end = new Date(event.end.dateTime);
+            
+            if (!currentBlock.start) {
+              currentBlock = { start, end };
+            } else if (start - currentBlock.end <= 30 * 60 * 1000) {
+              currentBlock.end = end;
+            } else {
+              workBlocks.push(currentBlock);
+              currentBlock = { start, end };
+            }
+          } catch (error) {
+            console.warn('Error processing event block:', error);
+          }
+        });
+        
+        if (currentBlock.start) {
+          workBlocks.push(currentBlock);
+        }
+        
+        const longestBlock = workBlocks.reduce((longest, block) => {
+          try {
+            const duration = (block.end - block.start) / (60 * 60 * 1000);
+            return duration > longest ? duration : longest;
+          } catch (error) {
+            return longest;
+          }
+        }, 0);
+        
+        return longestBlock;
+      }
+
+      async generateRecommendations() {
+        const recommendations = [];
+        const todayData = this.healthData[this.today];
+        
+        if (!todayData) return recommendations;
+        
+        if (todayData.sleep && todayData.sleep.score <= 6) {
+          if (todayData.sleep.duration < 6) {
+            recommendations.push({
+              title: '🚨 SLEEP DEPRIVATION DETECTED',
+              message: `You only slept ${todayData.sleep.duration} hours. Adults need 7-9 hours for optimal health.`,
+              priority: 'high',
+              actions: [
+                'Aim for 7+ hours tonight',
+                'Avoid caffeine after 2 PM',
+                'Create a dark, cool sleep environment'
+              ],
+              ruleId: 'SLEEP_DEPRIVATION'
+            });
+          }
+        }
+        
+        if (todayData.stress && todayData.stress.level >= 7) {
+          recommendations.push({
+            title: '🧠 HIGH STRESS ALERT',
+            message: `Your stress level is ${todayData.stress.level?.toFixed(1) || 'unknown'}/10.`,
+            priority: 'high',
+            actions: [
+              'Take 5-min breathing breaks every hour',
+              'Practice progressive muscle relaxation',
+              'Consider talking to a professional'
+            ],
+            ruleId: 'HIGH_STRESS'
+          });
+        }
+        
+        const todayEvents = this.calendarData.filter(event => {
+          try {
+            const eventDate = new Date(event.start.dateTime);
+            return eventDate.toDateString() === new Date().toDateString();
+          } catch (error) {
+            return false;
+          }
+        });
+        
+        const longestBlock = this.calculateLongestWorkBlock(todayEvents);
+        if (longestBlock >= 6) {
+          recommendations.push({
+            title: '⏰ EXTREME WORK DURATION',
+            message: `You worked ${longestBlock.toFixed(1)} hours straight. This exceeds healthy limits.`,
+            priority: 'high',
+            actions: [
+              'Schedule mandatory 15-min breaks every 2 hours',
+              'Use Pomodoro technique (25 work/5 break)',
+              'Stand up and stretch every 30 minutes'
+            ],
+            ruleId: 'EXTREME_WORK'
+          });
+        }
+        
+        return recommendations;
+      }
+
+      updateWellnessScore(score) {
+        document.getElementById('wellness-score').textContent = score;
+        
+        const circumference = 2 * Math.PI * 54;
+        const offset = circumference - (score / 10) * circumference;
+        document.getElementById('wellness-progress').style.strokeDashoffset = offset;
+        
+        const statusElement = document.getElementById('wellness-status');
+        if (score >= 8) {
+          statusElement.textContent = 'Optimal Wellness';
+          statusElement.className = 'text-sm text-green-600 mb-2';
+        } else if (score >= 6) {
+          statusElement.textContent = 'Good Balance';
+          statusElement.className = 'text-sm text-blue-600 mb-2';
+        } else if (score >= 4) {
+          statusElement.textContent = 'Needs Attention';
+          statusElement.className = 'text-sm text-amber-600 mb-2';
+        } else {
+          statusElement.textContent = 'Critical - Immediate Action Needed';
+          statusElement.className = 'text-sm text-red-600 mb-2 stress-critical';
+        }
+      }
+
+      updateRecoveryNeed() {
+        const todayData = this.healthData[this.today];
+        if (!todayData) return;
+        
+        let recoveryScore = 5;
+        let message = 'Moderate recovery needed';
+        let color = '#f59e0b';
+        
+        if (todayData.sleep.score <= 5) recoveryScore += 2;
+        if (todayData.stress.level >= 7) recoveryScore += 2;
+        
+        const workloadScore = this.calculateWorkloadScore();
+        if (workloadScore <= 5) recoveryScore += 1;
+        
+        if (recoveryScore >= 8) {
+          message = 'High recovery priority';
+          color = '#ef4444';
+        } else if (recoveryScore >= 6) {
+          message = 'Moderate recovery needed';
+          color = '#f59e0b';
+        } else {
+          message = 'Low recovery need';
+          color = '#10b981';
+        }
+        
+        document.getElementById('recovery-need').textContent = message;
+        document.getElementById('recovery-bar').style.width = `${recoveryScore * 10}%`;
+        document.getElementById('recovery-bar').style.backgroundColor = color;
+        document.getElementById('recovery-message').textContent = this.getRecoveryMessage(recoveryScore);
+      }
+
+      getRecoveryMessage(score) {
+        if (score >= 8) return '🚨 Prioritize rest and stress reduction immediately';
+        if (score >= 6) return '⚠️ Schedule recovery activities this week';
+        return '✅ Maintain current healthy habits';
+      }
+
+      displayRecommendations(recommendations) {
+        const container = document.getElementById('recommendations-container');
+        
+        if (!recommendations || recommendations.length === 0) {
+          const todayData = this.healthData[this.today];
+          
+          if (todayData) {
+            container.innerHTML = `
+              <div class="text-center py-8">
+                <div class="text-green-500 mb-2">
+                  <i class="fas fa-check-circle text-4xl"></i>
+                </div>
+                <div class="text-slate-600 font-medium">Excellent health balance today!</div>
+                <div class="text-slate-500 text-sm mt-1">Continue maintaining your healthy habits.</div>
+              </div>
+            `;
+          } else {
+            container.innerHTML = `
+              <div class="text-center py-8">
+                <div class="text-slate-400 mb-2">
+                  <i class="fas fa-clipboard-list text-4xl"></i>
+                </div>
+                <div class="text-secondary">Complete your daily health check to get personalized recommendations</div>
+                <button id="open-input-btn-2" class="mt-4 btn bg-gradient-to-r from-primary to-accent text-white px-6 py-3 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-medium text-sm">
+                  <i class="fas fa-edit mr-2"></i>
+                  Daily Health Check
+                </button>
+              </div>
+            `;
+            document.getElementById('open-input-btn-2').addEventListener('click', () => this.showInputModal());
+          }
+          return;
+        }
+        
+        container.innerHTML = recommendations.map(rec => `
+          <div class="p-4 rounded-xl border-2 ${
+            rec.priority === 'high' ? 'border-red-200 bg-red-50 stress-critical' : 
+            'border-amber-200 bg-amber-50'
+          }">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">
+                  ${rec.priority === 'high' ? '🚨' : '⚠️'}
+                </span>
+                <h4 class="font-semibold ${
+                  rec.priority === 'high' ? 'text-red-800' : 'text-amber-800'
+                }">${rec.title}</h4>
+              </div>
+            </div>
+            <p class="text-slate-700 mb-3 text-sm">${rec.message}</p>
+            <div class="space-y-2">
+              ${rec.actions.map(action => `
+                <div class="flex items-center gap-2 text-sm">
+                  <i class="fas fa-check-circle text-green-500 text-xs"></i>
+                  <span class="text-slate-600">${action}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      generateSleepPlan() {
+        const todayData = this.healthData[this.today];
+        if (!todayData) {
+          this.showNotification('Please complete your daily health check first', 'info');
+          return;
+        }
+        
+        const plan = this.createSleepPlan();
+        this.showCustomNotification('Sleep Improvement Plan', plan, 'purple');
+      }
+
+      generateStressPlan() {
+        const todayData = this.healthData[this.today];
+        if (!todayData) {
+          this.showNotification('Please complete your daily health check first', 'info');
+          return;
+        }
+        
+        const plan = this.createStressPlan();
+        this.showCustomNotification('Stress Management Plan', plan, 'blue');
+      }
+
+      createSleepPlan() {
+        const todayData = this.healthData[this.today];
+        const duration = todayData.sleep.duration;
+        const quality = todayData.sleep.quality;
+        
+        let plan = `<div class="space-y-3 text-sm"><h4 class="font-semibold text-lg mb-2 text-blue-900">🌙 Personalized Sleep Plan</h4>`;
+        
+        if (duration < 7) {
+          plan += `<p>• <strong class="text-blue-800">Priority:</strong> Increase sleep to 7-8 hours</p>`;
+          plan += `<p>• <strong class="text-blue-800">Action:</strong> Go to bed 1 hour earlier starting tonight</p>`;
+        }
+        
+        if (quality <= 3) {
+          plan += `<p>• <strong class="text-blue-800">Priority:</strong> Improve sleep quality</p>`;
+          plan += `<p>• <strong class="text-blue-800">Action:</strong> Create bedtime routine (read book, no screens)</p>`;
+        }
+        
+        plan += `<p>• <strong class="text-blue-800">Maintenance:</strong> Keep consistent sleep schedule</p>`;
+        plan += `<p>• <strong class="text-blue-800">Environment:</strong> Cool, dark, quiet bedroom</p>`;
+        plan += `</div>`;
+        
+        return plan;
+      }
+
+      createStressPlan() {
+        const todayData = this.healthData[this.today];
+        const level = todayData.stress.level;
+        const symptoms = todayData.stress.symptoms;
+        
+        let plan = `<div class="space-y-3 text-sm"><h4 class="font-semibold text-lg mb-2 text-purple-900">🧘 Personalized Stress Plan</h4>`;
+        
+        if (level >= 7) {
+          plan += `<p>• <strong class="text-purple-900">Priority:</strong> Immediate stress reduction</p>`;
+          plan += `<p>• <strong class="text-purple-900">Action:</strong> 5-min breathing exercises 3x daily</p>`;
+        }
+        
+        if (symptoms.includes('anxiety')) {
+          plan += `<p>• <strong class="text-purple-900">For Anxiety:</strong> Practice grounding techniques</p>`;
+        }
+        
+        if (symptoms.includes('muscle_tension')) {
+          plan += `<p>• <strong class="text-purple-900">For Tension:</strong> Daily stretching routine</p>`;
+        }
+        
+        plan += `<p>• <strong class="text-purple-900">Maintenance:</strong> Regular physical activity</p>`;
+        plan += `<p>• <strong class="text-purple-900">Support:</strong> Talk to friends/family daily</p>`;
+        plan += `</div>`;
+        
+        return plan;
+      }
+
+      suggestEmergencyBreak() {
+        const actions = [
+          '🛑 STOP all work immediately',
+          '💧 Drink a full glass of water',
+          '🌬️ 2-minute deep breathing exercise',
+          '🚶 5-minute walk away from screens',
+          '🎧 Listen to calming music',
+          '📵 Turn off notifications for 1 hour'
+        ];
+
+        const selectedActions = actions.sort(() => 0.5 - Math.random()).slice(0, 4);
+        
+        const emergencyPlan = `
+          <div class="space-y-3 text-sm">
+            <h4 class="font-semibold text-lg text-black">🚨 EMERGENCY RECOVERY PROTOCOL</h4>
+            <p class="text-black font-medium">Follow these steps immediately:</p>
+            ${selectedActions.map(action => `
+              <div class="flex items-center gap-2">
+                <i class="fas fa-exclamation-circle text-white-900"></i>
+                <span class="font-medium">${action}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+        this.showCustomNotification('Emergency Protocol Activated', emergencyPlan, 'red');
+      }
+
+      showLoadingState() {
+        const container = document.getElementById('recommendations-container');
+        container.innerHTML = `
+          <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-2"></div>
+            <div class="text-slate-600">Analyzing your daily health data...</div>
+          </div>
+        `;
+      }
+
+      hideLoadingState() {}
+
+      showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 ${
+          type === 'success' ? 'bg-green-500' : 
+          type === 'error' ? 'bg-red-500' : 
+          'bg-blue-500'
+        } text-white p-4 rounded-xl shadow-2xl z-50 max-w-sm`;
+        notification.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="text-lg">
+              ${type === 'success' ? '✅' : type === 'error' ? '❌' : '💡'}
+            </span>
+            <span class="flex-1 font-medium">${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 5000);
+      }
+
+      showCustomNotification(title, content, color = 'blue') {
+        const bgColor = color === 'red' ? 'bg-red-500' : 
+                        color === 'purple' ? 'bg-purple-500' : 'bg-blue-500';
+        
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 ${bgColor} text-white p-4 rounded-xl shadow-2xl z-50 max-w-sm`;
+        notification.innerHTML = `
+          <div class="flex items-start gap-3">
+            <span class="text-lg mt-1">
+              ${color === 'red' ? '🚨' : color === 'purple' ? '🌙' : '🧠'}
+            </span>
+            <div class="flex-1">
+              <h4 class="font-semibold mb-2">${title}</h4>
+              <div class="text-sm opacity-90">${content}</div>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200 mt-1">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 8000);
+      }
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      window.healthInsights = new ScientificHealthInsights();
+    });
+  </script>
+</body>
+</html>

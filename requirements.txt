@@ -1,0 +1,9 @@
+flask flask-cors 
+numpy 
+deepface
+opencv-python
+tf-keras
+cmake
+dlib
+face_recognition
+pip install fer

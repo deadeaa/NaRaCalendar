@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account - Face Verification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass {
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+            backdrop-filter: blur(8px);
+        }
+        .step-dot { 
+            width: 44px; 
+            height:44px; 
+            border-radius:9999px; 
+            display:inline-flex; 
+            align-items:center; 
+            justify-content:center; 
+        }
+        .fade-in { 
+            animation: fadeIn .28s ease both; 
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(6px); } 
+            to { opacity:1; transform: translateY(0); } 
+        }
+        #video, #preview {
+            transform: scaleX(-1); /* Mirror effect */
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-emerald-900 to-slate-900 flex items-center justify-center p-6">
+
+    <div class="w-full max-w-3xl glass rounded-3xl shadow-2xl p-8 text-gray-100">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-semibold" id="page-title">Create Account</h1>
+                <p class="text-sm text-emerald-200/80" id="page-subtitle">Quick steps to create an account and verify your face</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div id="status-badge" class="text-xs px-3 py-1 rounded-full bg-emerald-700/50">Step 1: Information</div>
+            </div>
+        </div>
+
+        <!-- Stepper -->
+        <div class="flex items-center gap-4 mb-6">
+            <div class="flex items-center gap-3">
+                <div id="step1" class="step-dot bg-emerald-500 text-white shadow-md">
+                    <span class="text-sm font-semibold">1</span>
+                </div>
+                <div class="text-sm">Information</div>
+                <div class="h-px w-8 bg-emerald-600/40"></div>
+                <div id="step2" class="step-dot bg-gray-700 text-emerald-300">
+                    <span class="text-sm font-semibold">2</span>
+                </div>
+                <div class="text-sm text-gray-300">Face Verification</div>
+            </div>
+        </div>
+
+        <!-- STEP 1: FORM -->
+        <div id="step-form" class="fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left: Form -->
+                <div class="p-4 rounded-xl bg-gradient-to-b from-white/3 to-transparent shadow-inner">
+                    <form id="signup-form" class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm text-emerald-100 mb-1">Full Name</label>
+                            <input id="name" name="name" type="text" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/6 focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="Your name" required>
+                            <p id="err-name" class="text-xs text-rose-400 mt-1 hidden">Enter a name.</p>
+                        </div>
+                        <div>
+                            <label for="email" class="block text-sm text-emerald-100 mb-1">Email</label>
+                            <input id="email" name="email" type="email" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/6 focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="you@gmail.com" required>
+                            <p id="err-email" class="text-xs text-rose-400 mt-1 hidden">Please use a valid Google account (Gmail).</p>
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm text-emerald-100 mb-1">Password</label>
+                            <input id="password" name="password" type="password" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/6 focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="At least 6 characters" required>
+                            <p id="err-pass" class="text-xs text-rose-400 mt-1 hidden">Password must be >= 6 characters.</p>
+                        </div>
+
+                        <!-- Google Account Info -->
+                        <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mt-4">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                <div class="text-sm text-blue-200">
+                                    <p class="font-semibold">Google Account Required</p>
+                                    <p class="text-blue-100/80 text-xs">Please use your Gmail account for Google Calendar integration.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 mt-2">
+                            <button type="button" id="btn-next" class="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 transition px-4 py-2 rounded-lg shadow">
+                                Next: Face Verification
+                            </button>
+                            <button type="reset" class="px-4 py-2 rounded-lg border border-white/6 text-sm hover:bg-white/3">Reset</button>
+                        </div>
+                    </form>
+
+                    <!-- Alternative Options -->
+                    <div class="mt-6 pt-4 border-t border-white/10 space-y-3">
+                        <div class="text-center">
+                            <p class="text-emerald-100/80 text-sm">Already have an account?</p>
+                            <a href="/login" class="text-emerald-300 hover:text-emerald-200 font-semibold text-sm">Login here</a>
+                        </div>
+
+                        <div class="pt-2 border-t border-white/10">
+                            <a href="/" class="text-emerald-200/70 hover:text-emerald-200 text-sm flex items-center justify-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                                </svg>
+                                Back to Landing Page
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Preview (Disabled in Step 1) -->
+                <div class="p-4 rounded-xl flex flex-col items-stretch justify-between bg-gradient-to-b from-white/3 to-transparent opacity-50">
+                    <div class="flex-1">
+                        <div class="rounded-lg bg-black/60 overflow-hidden relative h-56 flex items-center justify-center">
+                            <div class="text-sm text-emerald-100/90 p-4 text-center">
+                                Complete the form first to enable face verification
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: FACE VERIFICATION -->
+        <div id="step-face" class="hidden fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left: Camera -->
+                <div class="p-4 rounded-xl bg-gradient-to-b from-white/3 to-transparent shadow-inner">
+                    <div class="rounded-lg bg-black/60 overflow-hidden relative">
+                        <video id="video" autoplay playsinline class="w-full h-64 object-cover bg-black/70"></video>
+                        <img id="preview" class="w-full h-64 object-cover hidden" alt="Face preview" />
+                        <div id="camera-msg" class="absolute inset-0 flex items-center justify-center text-sm text-emerald-100/90 p-4 text-center">
+                            Starting camera...
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <button id="btn-capture" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg transition flex items-center justify-center gap-2">
+                            📸 Take Photo
+                        </button>
+                        <button id="btn-retake" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-3 rounded-lg transition hidden">
+                            🔄 Retake
+                        </button>
+                    </div>
+
+                    <div class="mt-4">
+                        <button id="btn-back" class="w-full bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg transition">
+                            ← Back to Form
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: User Info & Actions -->
+                <div class="p-4 rounded-xl bg-gradient-to-b from-white/3 to-transparent">
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-emerald-300 mb-2">Account Information</h3>
+                        <div class="space-y-2 text-sm">
+                            <div>
+                                <span class="text-emerald-200/70">Name:</span>
+                                <span id="display-name" class="text-white ml-2 font-medium">-</span>
+                            </div>
+                            <div>
+                                <span class="text-emerald-200/70">Email:</span>
+                                <span id="display-email" class="text-white ml-2 font-medium">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-emerald-300 mb-3">Instructions</h3>
+                        <ul class="space-y-2 text-sm text-emerald-100/80">
+                            <li class="flex items-start gap-2">
+                                <span class="text-emerald-400">✓</span>
+                                <span>Ensure good lighting on your face</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-emerald-400">✓</span>
+                                <span>Look directly at the camera</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-emerald-400">✓</span>
+                                <span>Remove sunglasses or hats</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-emerald-400">✓</span>
+                                <span>Keep a neutral expression</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg mb-4">
+                        <p class="text-sm text-blue-200">
+                            <span class="font-semibold">Note:</span> Your face data is stored securely and used only for authentication.
+                        </p>
+                    </div>
+
+                    <div>
+                        <button id="btn-submit" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg transition hidden">
+                            ✅ Complete Registration
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- hidden canvas for capture -->
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <!-- toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg hidden z-50"></div>
+
+<script>
+    let stream = null;
+    let faceCaptured = false;
+    let userData = {};
+
+    // DOM Elements
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const preview = document.getElementById('preview');
+    const toast = document.getElementById('toast');
+    const cameraMsg = document.getElementById('camera-msg');
+
+    // Buttons
+    const btnNext = document.getElementById('btn-next');
+    const btnBack = document.getElementById('btn-back');
+    const btnCapture = document.getElementById('btn-capture');
+    const btnRetake = document.getElementById('btn-retake');
+    const btnSubmit = document.getElementById('btn-submit');
+
+    // Steps
+    const stepForm = document.getElementById('step-form');
+    const stepFace = document.getElementById('step-face');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+
+    // Display elements
+    const statusBadge = document.getElementById('status-badge');
+    const pageTitle = document.getElementById('page-title');
+    const pageSubtitle = document.getElementById('page-subtitle');
+    const displayName = document.getElementById('display-name');
+    const displayEmail = document.getElementById('display-email');
+
+    // Validasi Google email
+    function isValidGoogleEmail(email) {
+        const googleDomains = ['gmail.com', 'googlemail.com', 'google.com'];
+        if (!email || !email.includes('@')) return false;
+        const domain = email.split('@')[1].toLowerCase();
+        return googleDomains.includes(domain);
+    }
+
+    function validateForm() {
+        const name = document.getElementById('name');
+        const email = document.getElementById('email');
+        const password = document.getElementById('password');
+
+        let ok = true;
+        document.getElementById('err-name').classList.add('hidden');
+        document.getElementById('err-email').classList.add('hidden');
+        document.getElementById('err-pass').classList.add('hidden');
+
+        if (!name.value.trim()) { 
+            document.getElementById('err-name').classList.remove('hidden'); 
+            ok = false; 
+        }
+        
+        if (!isValidGoogleEmail(email.value)) { 
+            document.getElementById('err-email').classList.remove('hidden'); 
+            ok = false; 
+        }
+        
+        if (password.value.length < 6) { 
+            document.getElementById('err-pass').classList.remove('hidden'); 
+            ok = false; 
+        }
+
+        return ok;
+    }
+
+    // Start camera
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 640 }, 
+                    height: { ideal: 480 }, 
+                    facingMode: "user" 
+                }, 
+                audio: false 
+            });
+            video.srcObject = stream;
+            
+            await new Promise((resolve) => {
+                if (video.readyState >= 4) {
+                    resolve();
+                } else {
+                    video.onloadedmetadata = resolve;
+                    setTimeout(resolve, 1000);
+                }
+            });
+            
+            await video.play();
+            
+            cameraMsg.textContent = 'Position your face and click "Take Photo"';
+            statusBadge.textContent = 'Step 2: Face Verification - Camera Ready';
+        } catch (e) {
+            showToast('Camera access not available.', true);
+            statusBadge.textContent = 'Step 2: Face Verification - Camera Error';
+            cameraMsg.textContent = 'Camera error - Please allow camera access';
+        }
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+        }
+        video.pause();
+        video.srcObject = null;
+    }
+
+    function captureFace() {
+        if (!video || video.readyState < 2) { 
+            showToast('Camera not ready', true); 
+            return; 
+        }
+        
+        const w = video.videoWidth, h = video.videoHeight;
+        canvas.width = w; 
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        
+        // Mirror image for natural preview
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, w, h);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        preview.src = dataUrl;
+        preview.classList.remove('hidden');
+        video.classList.add('hidden');
+        faceCaptured = true;
+        
+        btnCapture.classList.add('hidden');
+        btnRetake.classList.remove('hidden');
+        btnSubmit.classList.remove('hidden');
+        
+        showToast('Face captured successfully! Click "Complete Registration"');
+        statusBadge.textContent = 'Step 2: Face Captured';
+        cameraMsg.textContent = 'Face captured! Ready to register.';
+    }
+
+    function retake() {
+        preview.classList.add('hidden');
+        video.classList.remove('hidden');
+        btnCapture.classList.remove('hidden');
+        btnRetake.classList.add('hidden');
+        btnSubmit.classList.add('hidden');
+        faceCaptured = false;
+        statusBadge.textContent = 'Step 2: Face Verification - Camera Ready';
+        cameraMsg.textContent = 'Position your face and click "Take Photo"';
+    }
+
+    function showToast(msg, isError = false) {
+        toast.textContent = msg;
+        toast.classList.remove('hidden');
+        toast.classList.toggle('bg-rose-600', !!isError);
+        toast.classList.toggle('bg-emerald-600', !isError);
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // Navigation
+    btnNext.addEventListener('click', async () => {
+        if (!validateForm()) return;
+        
+        // Save user data
+        userData = {
+            name: document.getElementById('name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value
+        };
+
+        // Update display
+        displayName.textContent = userData.name;
+        displayEmail.textContent = userData.email;
+
+        // Switch to step 2
+        stepForm.classList.add('hidden');
+        stepFace.classList.remove('hidden');
+        
+        // Update stepper
+        step1.classList.replace('bg-emerald-500', 'bg-gray-700');
+        step1.classList.add('text-emerald-300');
+        step2.classList.replace('bg-gray-700', 'bg-emerald-500');
+        step2.classList.replace('text-emerald-300', 'text-white');
+        
+        // Update page info
+        pageTitle.textContent = 'Face Verification';
+        pageSubtitle.textContent = 'Final step: Register your face for secure login';
+        statusBadge.textContent = 'Step 2: Face Verification - Starting Camera...';
+
+        // Start camera
+        await startCamera();
+    });
+
+    btnBack.addEventListener('click', () => {
+        // Switch back to step 1
+        stepFace.classList.add('hidden');
+        stepForm.classList.remove('hidden');
+        
+        // Update stepper
+        step2.classList.replace('bg-emerald-500', 'bg-gray-700');
+        step2.classList.replace('text-white', 'text-emerald-300');
+        step1.classList.replace('bg-gray-700', 'bg-emerald-500');
+        step1.classList.replace('text-emerald-300', 'text-white');
+        
+        // Update page info
+        pageTitle.textContent = 'Create Account';
+        pageSubtitle.textContent = 'Quick steps to create an account and verify your face';
+        statusBadge.textContent = 'Step 1: Information';
+
+        // Stop camera
+        stopCamera();
+        retake();
+    });
+
+    // Face capture events
+    btnCapture.addEventListener('click', captureFace);
+    btnRetake.addEventListener('click', retake);
+
+        // Final registration - FIXED
+    btnSubmit.addEventListener('click', async () => {
+        if (!faceCaptured) { 
+            showToast('Take a photo of your face first', true); 
+            return; 
+        }
+
+        if (!userData.name || !userData.email) {
+            showToast('User data missing. Please go back and try again.', true);
+            return;
+        }
+
+        // Kirim data ke server - DENGAN SEMUA DATA
+        const payload = {
+            name: userData.name,
+            email: userData.email,
+            password: userData.password,
+            image: preview.src
+        };
+
+        console.log("📤 Sending signup data:", { 
+            name: userData.name, 
+            email: userData.email,
+            hasImage: !!preview.src 
+        });
+
+        showToast('Creating account...');
+        btnSubmit.disabled = true;
+
+        try {
+            const response = await fetch('/api/signup-face', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            console.log("📥 Server response:", result);
+
+            if (result.success) {
+                showToast('Account created successfully! Redirecting...');
+                setTimeout(() => window.location.href = '/dashboard', 1500);
+            } else {
+                let errorMsg = 'Registration failed';
+                if (result.error === 'email_exists') errorMsg = 'Email already registered';
+                else if (result.error === 'no_face_detected') errorMsg = 'No face detected in photo';
+                else if (result.error === 'invalid_google_email') errorMsg = 'Please use Gmail account';
+                else if (result.error) errorMsg = result.error;
+                
+                showToast(errorMsg, true);
+                btnSubmit.disabled = false;
+            }
+        } catch (error) {
+            console.error('Network Error:', error);
+            showToast('Network error. Please try again.', true);
+            btnSubmit.disabled = false;
+        }
+    });
+
+    // cleanup when leaving page
+    window.addEventListener('beforeunload', stopCamera);
+</script>
+</body>
+</html>

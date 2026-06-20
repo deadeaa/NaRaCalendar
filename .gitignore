@@ -1,0 +1,6 @@
+venv/
+venv_ws/
+__pycache__/
+*.db
+*.h5
+instance/

@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calendar - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#10b981',
+            secondary: '#64748b',
+            accent: '#059669',
+            error: '#ef4444',
+            neutral: '#f8fafc',
+            dark: '#1e293b',
+            light: '#f1f5f9',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Arial', 'Helvetica', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-in',
+            'slide-in': 'slideIn 0.3s ease-out',
+            'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideIn: {
+              '0%': { transform: 'translateX(-20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            pulseSoft: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.7' },
+            },
+          },
+          boxShadow: {
+            'soft': '0 2px 15px rgba(0, 0, 0, 0.08)',
+            'medium': '0 4px 25px rgba(0, 0, 0, 0.12)',
+            'strong': '0 8px 40px rgba(0, 0, 0, 0.15)',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    .card-box {
+      transition: all 0.3s ease;
+    }
+    .card-box:hover {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    .btn {
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    /* Mini Calendar Styles */
+    .calendar-grid {
+      font-size: 0.75rem;
+    }
+    
+    .calendar-day {
+      padding: 0.35rem 0;
+      border-radius: 6px;
+      cursor: default;
+      transition: all 0.2s ease;
+    }
+    
+    .calendar-day:hover {
+      background-color: #f1f5f9;
+    }
+    
+    .calendar-day.today {
+      background-color: #10b981;
+      color: white;
+      font-weight: 600;
+    }
+    
+    .calendar-day.other-month {
+      color: #94a3b8;
+    }
+    
+    /* Event list styles */
+    .event-item {
+      border-left: 3px solid #10b981;
+      background: #f8fafc;
+      transition: all 0.2s ease;
+    }
+    
+    .event-item:hover {
+      background: #f1f5f9;
+      transform: translateX(2px);
+    }
+    
+    .event-item.meeting {
+      border-left-color: #3b82f6;
+    }
+    
+    .event-item.personal {
+      border-left-color: #8b5cf6;
+    }
+    
+    .event-item.work {
+      border-left-color: #f59e0b;
+    }
+    
+    .event-item.study {
+      border-left-color: #10b981;
+    }
+    
+    /* Loading animation */
+    .loading-spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #10b981;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 min-h-screen font-sans text-slate-900 antialiased p-4 md:p-6">
+  
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md rounded-2xl shadow-soft border border-slate-200/50 p-4 mb-6 flex justify-between items-center">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center text-white font-bold text-lg">
+        C
+      </div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-slate-900">Calendar</h1>
+        <p class="text-sm text-secondary">Manage your schedule with Google Calendar</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-4">
+      <small id="clock" class="text-secondary text-sm font-medium"></small>
+      <div class="relative group">
+        <div class="user w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary hover:text-white transition-all duration-300 text-lg">
+          👤
+        </div>
+        <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-strong border border-slate-200/50 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+          <a href="/dashboard" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-home mr-2"></i>Dashboard
+          </a>
+          <a href="/health" class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fas fa-heartbeat mr-2"></i>Health Insights
+          </a>
+          <div class="border-t border-slate-100 my-1"></div>
+          <a href="/logout" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area with Sidebar -->
+  <div class="main-content bg-white/95 backdrop-blur-xl rounded-3xl shadow-medium border border-slate-200/50 overflow-hidden flex min-h-[700px] mb-8">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar w-20 md:w-24 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center py-6 px-2 text-slate-200 shadow-inner">
+      <div class="brand font-bold text-xs tracking-wider text-slate-100 mb-6 uppercase">Menu</div>
+      <nav class="flex flex-col space-y-2 flex-1">
+        <a href="/dashboard" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Dashboard">
+          <span class="relative z-10">🏠</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <!-- <a href="/chat" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="AI Chat">
+          <span class="relative z-10">💬</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a> -->
+        <a href="/speak" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Voice Assistant">
+          <span class="relative z-10">🎙️</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/calendar" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white text-lg transition-all duration-300 bg-primary/20 border border-primary/30 hover:bg-primary/30 hover:scale-105 hover:shadow-lg relative overflow-hidden group active" title="Calendar">
+          <span class="relative z-10">📅</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/health" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Health Tracker">
+          <span class="relative z-10">❤️</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+        <a href="/emotion" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Face Emotion Scan">
+          <span class="relative z-10">😊</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+      </nav>
+      <div class="mt-auto">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm text-slate-300 mb-2 text-center leading-tight">
+          <span id="today-date-short">Today</span>
+        </div>
+        <a href="/profile" class="icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-white/70 text-lg transition-all duration-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105 hover:shadow-lg relative overflow-hidden group" title="Profile">
+          <span class="relative z-10">👤</span>
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 md:p-8 overflow-auto scrollbar-thin">
+      
+      <!-- Header Section -->
+      <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Calendar Management</h2>
+            <p class="text-secondary">Connect to Google Calendar and manage your events</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Calendar Panel -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Google Calendar Connection -->
+          <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-xl font-semibold text-slate-900 flex items-center">
+                <span class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mr-3">
+                  <span class="text-primary text-sm">📅</span>
+                </span>
+                Google Calendar
+              </h3>
+            </div>
+            
+            <!-- Connection Status -->
+            <div class="mb-6">
+              <div id="calendar-status" class="text-secondary text-sm mb-4">Connect to Google Calendar to manage your events.</div>
+              <div class="flex flex-wrap gap-3 mb-4">
+                <button id="auth-button" class="btn bg-gradient-to-r from-primary to-accent text-white px-5 py-2.5 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-medium text-sm">
+                  <i class="fab fa-google mr-2"></i>Connect Google Calendar
+                </button>
+                <button id="signout-button" class="btn secondary bg-white text-primary border border-slate-200 px-5 py-2.5 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm hidden">
+                  <i class="fas fa-sign-out-alt mr-2"></i>Sign Out
+                </button>
+              </div>
+            </div>
+
+            <!-- Event Form -->
+            <div class="mb-6">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="font-semibold text-slate-800">Add/Edit Event</h4>
+                <div class="flex gap-2">
+                  <button id="today-btn" class="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-lg hover:bg-slate-200 transition-colors">
+                    Today
+                  </button>
+                  <button id="tomorrow-btn" class="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-lg hover:bg-slate-200 transition-colors">
+                    Tomorrow
+                  </button>
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Event Title *</label>
+                  <input id="event-title" type="text" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 text-sm placeholder-slate-400" placeholder="Meeting with team...">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Date *</label>
+                  <input id="event-date" type="date" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 text-sm">
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Start Time</label>
+                  <input id="event-start" type="time" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 text-sm">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">End Time</label>
+                  <input id="event-end" type="time" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 text-sm">
+                </div>
+              </div>
+              
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea id="event-desc" class="w-full h-20 rounded-xl border border-slate-200 p-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 text-sm placeholder-slate-400 resize-none" placeholder="Event description..."></textarea>
+              </div>
+              
+              <div class="flex flex-wrap gap-3">
+                <button id="add-event" class="btn bg-gradient-to-r from-primary to-accent text-white px-5 py-2.5 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-medium text-sm">
+                  <i class="fas fa-plus mr-2"></i>Add Event
+                </button>
+                <button id="clear-events" class="btn secondary bg-white text-primary border border-slate-200 px-5 py-2.5 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm">
+                  <i class="fas fa-eraser mr-2"></i>Clear Form
+                </button>
+                <button id="list-events" class="btn secondary bg-white text-primary border border-slate-200 px-5 py-2.5 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm">
+                  <i class="fas fa-sync-alt mr-2"></i>Refresh Events
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Events -->
+          <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-semibold text-slate-900 flex items-center">
+                <span class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                  <span class="text-blue-600 text-sm">📋</span>
+                </span>
+                Upcoming Events
+              </h3>
+              <div class="text-xs text-secondary">
+                <i class="fas fa-info-circle mr-1"></i>
+                Connected to Google Calendar
+              </div>
+            </div>
+            
+            <div id="events-list" class="space-y-3 max-h-80 overflow-auto scrollbar-thin pr-2">
+              <div class="text-center py-8 text-secondary">
+                <div class="text-4xl mb-2">📅</div>
+                <p>No events loaded</p>
+                <p class="text-sm mt-1">Connect to calendar and click refresh</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar Panels -->
+        <div class="space-y-6">
+          <!-- Quick Actions -->
+          <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50">
+            <h3 class="text-xl font-semibold text-slate-900 mb-4 flex items-center">
+              <span class="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center mr-3">
+                <span class="text-accent text-sm">⚡</span>
+              </span>
+              Quick Actions
+            </h3>
+            <div class="flex flex-col gap-3">
+              <a href="/speak" class="btn bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-3 rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-300 font-medium text-sm w-full flex items-center justify-center gap-2">
+                <i class="fas fa-microphone"></i>
+                Voice Command
+              </a>
+              <button id="refresh-events" class="btn secondary bg-white text-primary border border-slate-200 px-4 py-3 rounded-xl shadow-soft hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 font-medium text-sm w-full flex items-center justify-center gap-2">
+                <i class="fas fa-sync-alt"></i>
+                Refresh Events
+              </button>
+            </div>
+          </div>
+          
+          <!-- Mini Calendar -->
+          <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-semibold text-slate-900 flex items-center">
+                <span class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mr-3">
+                  <span class="text-primary text-sm">📅</span>
+                </span>
+                Mini Calendar
+              </h3>
+              <div class="text-xs text-secondary" id="current-month">Month</div>
+            </div>
+            
+            <!-- Calendar Header -->
+            <div class="calendar-grid grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-500 mb-2">
+              <div>Sun</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+            </div>
+            
+            <!-- Calendar Days -->
+            <div class="calendar-grid grid grid-cols-7 gap-1 text-center text-sm" id="mini-cal">
+              <!-- Mini calendar akan di-render oleh JavaScript -->
+            </div>
+          </div>
+
+          <!-- Calendar Stats -->
+          <div class="card-box bg-white rounded-2xl p-6 shadow-soft border border-slate-200/50">
+            <h3 class="text-xl font-semibold text-slate-900 mb-4 flex items-center">
+              <span class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mr-3">
+                <span class="text-primary text-sm">📊</span>
+              </span>
+              Calendar Status
+            </h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div class="flex items-center">
+                  <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-calendar-day text-blue-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <div class="text-sm text-slate-600">Today's Events</div>
+                    <div id="today-events" class="text-lg font-semibold text-slate-900">0</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div class="flex items-center">
+                  <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-calendar-week text-green-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <div class="text-sm text-slate-600">This Week</div>
+                    <div id="week-events" class="text-lg font-semibold text-slate-900">0</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div class="flex items-center">
+                  <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-chart-bar text-purple-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <div class="text-sm text-slate-600">Total Events</div>
+                    <div id="total-events" class="text-lg font-semibold text-slate-900">0</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mode Switcher untuk Testing (Sembunyikan di production) -->
+  <div id="mode-switcher" class="fixed bottom-4 left-4 bg-yellow-100 border border-yellow-300 p-3 rounded-lg z-40 hidden">
+    <div class="text-sm font-medium text-yellow-800 mb-2">Calendar Mode:</div>
+    <div class="flex gap-2">
+      <button onclick="calendar.enableSimulation()" class="text-xs bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors">
+        Simulation
+      </button>
+      <button onclick="calendar.enableRealMode()" class="text-xs bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors">
+        Real API
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // Clock Function
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      const dateString = now.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      const shortDateString = now.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short'
+      });
+      
+      const clockElement = document.getElementById('clock');
+      if (clockElement) {
+        clockElement.textContent = `${dateString} • ${timeString}`;
+      }
+      
+      const shortDateElement = document.getElementById('today-date-short');
+      if (shortDateElement) {
+        shortDateElement.textContent = shortDateString;
+      }
+    }
+    
+    updateClock();
+    setInterval(updateClock, 60000);
+    
+    // Initialize Mini Calendar
+    function initMiniCalendar() {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const currentDay = now.getDate();
+      
+      // Set current month text
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                         'July', 'August', 'September', 'October', 'November', 'December'];
+      document.getElementById('current-month').textContent = monthNames[currentMonth] + ' ' + currentYear;
+      
+      // Get first day of month and total days
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      
+      // Generate calendar grid
+      let calendarHTML = '';
+      
+      // Add empty cells for days before first day of month
+      for (let i = 0; i < firstDay; i++) {
+        calendarHTML += `<div class="calendar-day other-month text-slate-300"></div>`;
+      }
+      
+      // Add days of month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = (day === currentDay);
+        const dayClass = isToday ? 'calendar-day today' : 'calendar-day';
+        calendarHTML += `<div class="${dayClass}">${day}</div>`;
+      }
+      
+      document.getElementById('mini-cal').innerHTML = calendarHTML;
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Calendar Page Loaded');
+      initMiniCalendar();
+      
+      // Set today's date in date input
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('event-date').value = today;
+      
+      // Set default times
+      document.getElementById('event-start').value = '09:00';
+      document.getElementById('event-end').value = '10:00';
+      
+      // Today/Tomorrow button functionality
+      document.getElementById('today-btn').addEventListener('click', () => {
+        document.getElementById('event-date').value = today;
+      });
+      
+      document.getElementById('tomorrow-btn').addEventListener('click', () => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('event-date').value = tomorrow.toISOString().split('T')[0];
+      });
+    });
+  </script>
+  <script src="/static/calendar.js"></script>
+</body>
+</html>

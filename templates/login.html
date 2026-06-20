@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login with Face</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #video, #preview {
+            transform: scaleX(-1); /* Mirror effect */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-[400px] text-center">
+        <h1 class="text-2xl font-bold mb-2">Welcome Back!</h1>
+        <p class="text-gray-600 mb-6">Scan your face to login instantly</p>
+
+        <!-- Camera -->
+        <div class="relative w-64 h-64 mx-auto mb-6 bg-gray-800 rounded-full overflow-hidden">
+            <video id="video" autoplay playsinline class="w-full h-full object-cover rounded-full"></video>
+            <img id="preview" class="absolute inset-0 w-full h-full object-cover rounded-full hidden" />
+            <div id="cameraStatus" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white rounded-full">
+                <div class="text-center">
+                    <div class="text-2xl mb-2">📷</div>
+                    <div>Starting Camera...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Welcome (akan muncul setelah face match) -->
+        <div id="welcome-message" class="hidden mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p class="text-green-700 font-semibold" id="welcome-text">Welcome, User!</p>
+        </div>
+
+        <div class="flex gap-2 justify-center mb-4">
+            <button id="btnCapture" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full">
+                Take Photo
+            </button>
+            <button id="btnRetake" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-full hidden">
+                Retake
+            </button>
+        </div>
+
+        <button id="btnSubmit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-semibold hidden">
+            Login with Face
+        </button>
+
+        <p id="status" class="text-gray-600 mt-4 h-12 flex items-center justify-center">Position your face in front of the camera</p>
+        
+        <!-- Alternative Options -->
+        <div class="space-y-3 mt-6">
+            <div class="text-center">
+                <p class="text-gray-600 text-sm">Don't have an account?</p>
+                <a href="/signup" class="text-green-600 hover:text-green-700 font-semibold text-sm">Sign up here</a>
+            </div>
+
+            <div class="pt-2 border-t border-gray-200">
+                <a href="/" class="text-gray-500 hover:text-gray-700 text-sm flex items-center justify-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Landing Page
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="canvas" class="hidden"></canvas>
+
+<script>
+let video = document.getElementById('video');
+let canvas = document.getElementById('canvas');
+let preview = document.getElementById('preview');
+let statusText = document.getElementById('status');
+let btnCapture = document.getElementById('btnCapture');
+let btnRetake = document.getElementById('btnRetake');
+let btnSubmit = document.getElementById('btnSubmit');
+let welcomeMessage = document.getElementById('welcome-message');
+let welcomeText = document.getElementById('welcome-text');
+let cameraStatus = document.getElementById('cameraStatus');
+
+let stream = null;
+let faceCaptured = false;
+let isProcessing = false;
+
+// Start camera
+async function startCamera() {
+    try {
+        statusText.textContent = "Starting camera...";
+        
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                width: { ideal: 640 }, 
+                height: { ideal: 480 }, 
+                facingMode: "user" 
+            }, 
+            audio: false 
+        });
+        
+        video.srcObject = stream;
+        
+        // Tunggu sampai video ready
+        await new Promise((resolve) => {
+            if (video.readyState >= 4) {
+                resolve();
+            } else {
+                video.onloadedmetadata = resolve;
+                setTimeout(resolve, 1000);
+            }
+        });
+        
+        await video.play();
+        
+        cameraStatus.style.display = 'none';
+        statusText.textContent = "Camera ready! Click 'Take Photo' to start.";
+        
+    } catch (e) {
+        console.error("Camera error:", e);
+        statusText.textContent = "Camera not available. Please allow camera access.";
+        cameraStatus.innerHTML = `
+            <div class="text-center text-red-100">
+                <div class="text-2xl mb-2">❌</div>
+                <div>Camera Error</div>
+            </div>
+        `;
+    }
+}
+
+// Stop camera
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+    }
+    video.pause();
+    video.srcObject = null;
+}
+
+// Capture photo
+btnCapture.addEventListener('click', () => {
+    if (!video || video.readyState < 2) {
+        statusText.textContent = "Camera not ready.";
+        return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    let ctx = canvas.getContext('2d');
+    
+    // Mirror the image for natural preview
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    preview.src = canvas.toDataURL('image/jpeg', 0.8);
+    preview.classList.remove('hidden');
+    video.classList.add('hidden');
+
+    btnCapture.classList.add('hidden');
+    btnRetake.classList.remove('hidden');
+    btnSubmit.classList.remove('hidden');
+    faceCaptured = true;
+    statusText.textContent = "Face captured! Click 'Login with Face' to continue.";
+});
+
+// Retake
+btnRetake.addEventListener('click', () => {
+    preview.classList.add('hidden');
+    video.classList.remove('hidden');
+    btnCapture.classList.remove('hidden');
+    btnRetake.classList.add('hidden');
+    btnSubmit.classList.add('hidden');
+    welcomeMessage.classList.add('hidden');
+    faceCaptured = false;
+    isProcessing = false;
+    statusText.textContent = "Camera ready! Click 'Take Photo' to start.";
+});
+
+// Submit - PERBAIKAN BESAR DI SINI
+btnSubmit.addEventListener('click', async () => {
+    if (!faceCaptured || isProcessing) {
+        return;
+    }
+
+    isProcessing = true;
+    statusText.textContent = "Verifying face and detecting emotion...";
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = "Processing...";
+    
+    try {
+        console.log("🔄 Sending login request...");
+        
+        const response = await fetch('/api/login-face', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ image: preview.src })
+        });
+        
+        console.log("📨 Response status:", response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("❌ Response error:", errorText);
+            throw new Error(`Server error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("✅ Login response data:", data);
+
+        if (data.match) {
+            // Tampilkan welcome message dengan nama user
+            welcomeText.textContent = `Welcome back, ${data.user.name}!`;
+            welcomeMessage.classList.remove('hidden');
+            
+            console.log("🎭 Emotion data:", data.emotion);
+            
+            // Tampilkan emotion notification jika ada
+            if (data.emotion && data.suggestions) {
+                showEmotionNotification(data.emotion, data.suggestions);
+                
+                // ✅ TAMBAHKAN: Simpan emotion ke session untuk halaman emotion
+                await saveEmotionToSession(data.emotion, data.suggestions);
+                
+                // Tunggu 3 detik untuk menampilkan notifikasi sebelum redirect
+                statusText.textContent = "Face verified! Preparing your dashboard...";
+                stopCamera();
+                
+                setTimeout(() => {
+                    console.log("🔄 Redirecting to dashboard...");
+                    window.location.href = '/dashboard';
+                }, 3000);
+            } else {
+                // Jika tidak ada emotion data, redirect lebih cepat
+                statusText.textContent = "Face verified! Redirecting...";
+                stopCamera();
+                setTimeout(() => {
+                    console.log("🔄 Redirecting to dashboard...");
+                    window.location.href = '/dashboard';
+                }, 1500);
+            }
+        } else {
+            throw new Error(data.error || "Face not recognized");
+        }
+    } catch (err) {
+        console.error("💥 Login error:", err);
+        statusText.textContent = "Login failed. Please try again.";
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = "Login with Face";
+        isProcessing = false;
+        
+        // Tampilkan error notification
+        showErrorNotification("Login failed: " + err.message);
+        
+        // Auto retake setelah error
+        setTimeout(() => {
+            btnRetake.click();
+        }, 2000);
+    }
+});
+
+// ✅ TAMBAHKAN: Function untuk menyimpan emotion ke session
+async function saveEmotionToSession(emotion, suggestions) {
+    try {
+        const response = await fetch('/api/save-login-emotion', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ 
+                emotion: emotion,
+                suggestions: suggestions 
+            })
+        });
+        
+        if (response.ok) {
+            console.log("✅ Emotion saved to session:", emotion);
+        }
+    } catch (error) {
+        console.error("❌ Error saving emotion to session:", error);
+    }
+}
+
+// Function untuk test session
+async function testSession() {
+    try {
+        const response = await fetch('/check-session', {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        console.log("🔍 Session check:", data);
+        return data;
+    } catch (err) {
+        console.error("Session check error:", err);
+        return { logged_in: false };
+    }
+}
+
+// Test session ketika page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🚀 Page loaded, testing session...");
+    testSession().then(sessionData => {
+        if (sessionData.logged_in) {
+            console.log("✅ User already logged in, redirecting...");
+            window.location.href = '/dashboard';
+        } else {
+            console.log("❌ User not logged in, starting camera...");
+            setTimeout(startCamera, 500);
+        }
+    });
+});
+
+// Function untuk show emotion notification
+function showEmotionNotification(emotion, suggestions) {
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-white border-l-4 border-blue-500 shadow-lg rounded-lg p-4 max-w-sm z-50 animate-fade-in';
+    notification.innerHTML = `
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <span class="text-2xl">${getEmotionEmoji(emotion)}</span>
+            </div>
+            <div class="ml-3 flex-1">
+                <h3 class="text-sm font-semibold text-gray-900">${suggestions.message}</h3>
+                <div class="mt-2">
+                    <p class="text-xs text-gray-600 font-semibold">Calendar Suggestions:</p>
+                    <ul class="text-xs text-gray-600 mt-1 space-y-1">
+                        ${suggestions.calendar_suggestions.map(sug => `<li>• ${sug}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="mt-2">
+                    <p class="text-xs text-blue-600 font-semibold">Reminders:</p>
+                    <ul class="text-xs text-blue-600 mt-1 space-y-1">
+                        ${suggestions.reminders.map(rem => `<li>💡 ${rem}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600">
+                ✕
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 100000);
+}
+
+// Function untuk show error notification
+function showErrorNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-white border-l-4 border-red-500 shadow-lg rounded-lg p-4 max-w-sm z-50 animate-fade-in';
+    notification.innerHTML = `
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <span class="text-2xl">❌</span>
+            </div>
+            <div class="ml-3 flex-1">
+                <h3 class="text-sm font-semibold text-gray-900">Login Error</h3>
+                <p class="text-xs text-gray-600 mt-1">${message}</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600">
+                ✕
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+function getEmotionEmoji(emotion) {
+    const emojis = {
+        'happy': '😊',
+        'sad': '😔',
+        'angry': '😠',
+        'fear': '😨',
+        'surprise': '😲',
+        'disgust': '😖',
+        'neutral': '😐'
+    };
+    return emojis[emotion] || '👋';
+}
+
+// Auto-start camera ketika page load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(startCamera, 500);
+});
+
+// Cleanup
+window.addEventListener('beforeunload', stopCamera);
+</script>
+
+<style>
+@keyframes fade-in {
+    from { opacity: 0; transform: translateX(100px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+}
+</style>
+</body>
+</html>
